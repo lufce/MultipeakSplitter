@@ -16,7 +16,7 @@ public class test {
 		String filepath = "C:\\Users\\Shohei\\eclipse-workspace\\MultipeakSplitter\\file\\";
 //		String fileIn1 = "20171129Nozaki-1_A07.ab1";
 		String fileIn2 = "20170214-Nozaki-2_B09.ab1";
-		String fileRef = "BBS1refseq.fa";
+		String fileRef = "BBS1refseq.txt";
 //		String fileOut1 = "single.jpg";
 //		String fileOut2 = "multi.jpg";
 		
