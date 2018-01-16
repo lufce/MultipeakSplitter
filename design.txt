@@ -1,0 +1,41 @@
+＝＝＝MultipeakSplitter＝＝＝
+●動機
+エクセルVBAで作製したダブルピークのドットプロットは、ダブルピークの検出が目視で手動だった。
+そこを自動化したいと思い、Biojava1.9のライブラリに行きついた。
+そこで、次のことを目標にしてMultipekaSplitterを作製する。
+
+　　１．Multi-peakの検出を自動化する。
+　　２．入力されたReference Sequenceに対してDot plotを二次元配列として出力する。またその画像を出力する。
+　　３．ドットプロットから閾値以上の連続配列を出力する。
+　　４．Multi-peakの検出の各種設定をCRISP-IDのようにインタラクティブにする。
+　　５．ドットプロット画像から欲しい配列のラインを指定できるようにする。
+
+●仕様
+１．Multi-peakの検出を自動化する
+Peakの定義はどうしたらいいだろう。
+・Peakの定義１
+　　１．Basecallの地点である
+　　２．Basecall地点のピーク値が、４塩基のうちの最大ピークのCutoff%以上である
+
+・Peakの定義２
+　　１．Basecallの地点である
+　　２．Basecall地点のピーク値が、noise値以下である
+　　３．Basecall地点のピーク値が、４塩基のうちの最大ピークのCutoff%以下である
+
+定義１を用いる。
+
+
+●関数
+CreateDotPlot
+引数　ABITrace trace: Multipeakを含むab1ファイルのトレースデータ
+　　　Sequence refseq: Reference Sequence
+
+変数
+　　int cutoff  ピークとして認識するための閾値。最大ピーク値のcuttoff%
+    int window  ドットプロットを整えるための窓サイズ
+
+　　int[][] dna  第一インデックス、0:A 1:C 2:G 3:T　第二インデックス、各Basecallでのピーク値
+　　boolean[][] multi  第一インデックス、0:A 1:C 2:G 3:T　第二インデックス、(index +1)番目の塩基が第一インデックスの塩基と同じならTrue
+　　boolean[][] ref  第一インデックス、0:A 1:C 2:G 3:T　第二インデックス、(index +1)番目の塩基が第一インデックスの塩基と同じならTrue
+　　boolean[][] dotmap  第一インデックス、multipeak配列の配列長　第二インデックス、Reference配列の配列長
+    boolean[][] trimmedmap  dotmapのうちwindowサイズの刈り取りをしたもの
