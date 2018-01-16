@@ -9,8 +9,8 @@ import org.biojavax.bio.seq.io.*;
 
 public class test {
 	
-	private static int cutoff = 10;  //Dotplot‚ÌƒmƒCƒY‚Æ‚µ‚ÄƒJƒbƒg‚·‚é%
-	private static int window = 7;  //Dotplot‚ğ®‚¦‚é‚Æ‚«‚Ì‚ÌƒEƒBƒ“ƒhƒEƒTƒCƒY
+	private static int cutoff = 10;  //Dotplotã®ãƒã‚¤ã‚ºã¨ã—ã¦ã‚«ãƒƒãƒˆã™ã‚‹%
+	private static int window = 7;  //Dotplotã‚’æ•´ãˆã‚‹ã¨ãã®ã®ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚µã‚¤ã‚º
 	
 	public static void main(String argv[]){
 		String filepath = "C:\\Users\\Shohei\\eclipse-workspace\\MultipeakSplitter\\file\\";
@@ -27,10 +27,10 @@ public class test {
 		File o2 = new File(filepath+"basecall.csv");
 		
 		try {
-			//ƒgƒŒ[ƒXƒf[ƒ^‚ğ“Ç‚İ‚Ş
+			//ãƒˆãƒ¬ãƒ¼ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’èª­ã¿è¾¼ã‚€
 			ABITrace trace = new ABITrace(i1);
 			
-			//RefSeq”z—ñ‚ğ“Ç‚İ‚Ş
+			//RefSeqé…åˆ—ã‚’èª­ã¿è¾¼ã‚€
 			FastaFormat fref = new FastaFormat();
 			SeqIOListener refseq;
 			
@@ -142,8 +142,8 @@ public class test {
 	}
 	
 	private static int[][] getAllBasecallTrace(ABITrace trace) {
-		//Še‰–Šî‚²‚Æ‚Ìƒx[ƒXƒR[ƒ‹À•W‚Å‚ÌƒgƒŒ[ƒXƒf[ƒ^‚ğŠÜ‚ñ‚¾“ñŸŒ³”z—ñ‚ğ•Ô‚·
-		//‘æˆêindex 0:A 1:C 2:G 3:T
+		//å„å¡©åŸºã”ã¨ã®ãƒ™ãƒ¼ã‚¹ã‚³ãƒ¼ãƒ«åº§æ¨™ã§ã®ãƒˆãƒ¬ãƒ¼ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’å«ã‚“ã äºŒæ¬¡å…ƒé…åˆ—ã‚’è¿”ã™
+		//ç¬¬ä¸€index 0:A 1:C 2:G 3:T
 		
 		int[][] dna = new int[4][trace.getSequenceLength()];
 		
