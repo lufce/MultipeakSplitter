@@ -44,7 +44,6 @@ public class test {
 			Sequence refseq = refseqBuilder.makeSequence();
 			System.out.println(refseq.seqString());
 			
-			
 //			System.out.println(trace.getSequenceLength());
 //			System.out.println(trace.getTraceLength());
 //			
