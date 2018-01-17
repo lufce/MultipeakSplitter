@@ -4,7 +4,6 @@ import java.io.*;
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.program.abi.*;
-import org.biojava.bio.seq.io.SeqIOListener;
 import org.biojavax.bio.seq.io.*;
 
 public class test {
@@ -16,35 +15,41 @@ public class test {
 		String filepath = "C:\\Users\\Shohei\\eclipse-workspace\\MultipeakSplitter\\file\\";
 //		String fileIn1 = "20171129Nozaki-1_A07.ab1";
 		String fileIn2 = "20170214-Nozaki-2_B09.ab1";
-		String fileRef = "BBS1refseq.txt";
+		String fileRef = "BBS1refseq.fa";
 //		String fileOut1 = "single.jpg";
 //		String fileOut2 = "multi.jpg";
 		
-		File i1 = new File(filepath+fileIn2);
-		File ref = new File(filepath+fileRef);
-		
-//		File o1 = new File(filepath+"out.csv");
-		File o2 = new File(filepath+"basecall.csv");
-		
 		try {
-			//トレースデータを読み込む
+
+			File i1 = new File(filepath+fileIn2);
+			File fref = new File(filepath+fileRef);
+			BufferedReader bref = new BufferedReader(new FileReader(filepath+fileRef));
+			
+//			File o1 = new File(filepath+"out.csv");
+//			File o2 = new File(filepath+"basecall.csv");
+
+		  //トレースデータを読み込む
 			ABITrace trace = new ABITrace(i1);
 			
 			//RefSeq配列を読み込む
-			FastaFormat fref = new FastaFormat();
-			SeqIOListener refseq;
+			FastaFormat faref = new FastaFormat();
+			SimpleRichSequenceBuilder refseqBuilder = new SimpleRichSequenceBuilder();
+
 			
-			if(fref.canRead(ref)==false) {
+			if(faref.canRead(fref)==false) {
 				System.out.println("Cannot read the reference sequence file");
+				bref.close();
 				return;
 			}
-			fref.readSequence(ref, fref.guessSymbolTokenization(ref), refseq);
+			faref.readSequence(bref, faref.guessSymbolTokenization(fref), refseqBuilder);
 			
+			Sequence refseq = refseqBuilder.makeSequence();
+			System.out.println(refseq.seqString());
 			
-			System.out.println(trace.getSequenceLength());
-			System.out.println(trace.getTraceLength());
-			
-			int[][] dna = getAllBasecallTrace(trace);
+//			System.out.println(trace.getSequenceLength());
+//			System.out.println(trace.getTraceLength());
+//			
+//			int[][] dna = getAllBasecallTrace(trace);
 			
 //			String output2 = BaseLocationCSV(base,a_tr,c_tr,g_tr,t_tr);
 //			
