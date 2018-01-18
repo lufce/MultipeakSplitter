@@ -8,12 +8,12 @@ import org.biojavax.bio.seq.io.*;
 
 public class test {
 	
-	private static double cutoff = 0.2;  //Dotplotのノイズとしてカットする%
-	private static int window = 7;  //Dotplotを整えるときののウィンドウサイズ
+	private static double cutoff = 0.2;  //Dotplotのカットオフ用
+	private static int window = 7;  //Dotplotウィンドウサイズ
 	
 	public static void main(String argv[]){
-//		String filepath = "C:\\Users\\Shohei\\eclipse-workspace\\MultipeakSplitter\\file\\";
-		String filepath = "C:\\Users\\shohei_desk\\git\\MultipeakSplitter\\file\\";
+		String filepath = "C:\\Users\\Shohei\\eclipse-workspace\\MultipeakSplitter\\file\\";
+//		String filepath = "C:\\Users\\shohei_desk\\git\\MultipeakSplitter\\file\\";
 //		String fileIn2 = "20171129Nozaki-1_A07.ab1";
 		String fileIn2 = "20170214-Nozaki-2_B09.ab1";
 		String fileRef = "BBS1refseq.fa";
@@ -29,10 +29,10 @@ public class test {
 			File o1 = new File(filepath+"out2.csv");
 //			File o2 = new File(filepath+"basecall.csv");
 
-		  //トレースデータを読み込む
+			//トレースデータを読み込む
 			ABITrace trace = new ABITrace(i1);
 			
-			//RefSeq配列を読み込む
+			//RefSeq読み込み
 //			FastaFormat faref = new FastaFormat();
 //			SimpleRichSequenceBuilder refseqBuilder = new SimpleRichSequenceBuilder();
 //
@@ -64,7 +64,7 @@ public class test {
 //			fw2.close();
 			
 		}catch(Exception e) {
-			e.printStackTrace();
+			System.out.println(e);
 		}
 		
 		System.out.println("end");
@@ -208,7 +208,7 @@ public class test {
 		
 		for(int m = 0; m<dna[1].length; m++){
 			
-			//最大値の検索
+			//最大値の取得
 			for(int n=0; n<4; n++){
 				if(maxpeak < dna[n][m]){
 					maxpeak = dna[n][m];
@@ -229,5 +229,29 @@ public class test {
 		}
 		
 		return multi;
+	}
+
+	private static boolean[][] Refseq2Boolean(String refseq){
+		boolean[][] boo = new boolean[4][refseq.length()];
+		char base;
+		
+		//初期化
+		for(int n=0; n< refseq.length(); n++) {
+			boo[0][n] = false;
+			boo[1][n] = false;
+			boo[2][n] = false;
+			boo[3][n] = false;
+		}
+		
+		//塩基配列をbooleanの二次元配列に変換
+		for(int n=0; n< refseq.length(); n++) {
+			base = refseq.charAt(n);
+			if(base == 'A' || base == 'a') {boo[0][n] = true;}
+			else if(base == 'C' || base == 'c') {boo[1][n] = true;}
+			else if(base == 'G' || base == 'g') {boo[2][n] = true;}
+			else if(base == 'T' || base == 't') {boo[3][n] = true;}
+		}
+		
+		return boo;
 	}
 }
