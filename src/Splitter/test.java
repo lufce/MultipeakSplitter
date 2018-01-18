@@ -8,12 +8,13 @@ import org.biojavax.bio.seq.io.*;
 
 public class test {
 	
-	private static int cutoff = 10;  //Dotplotのノイズとしてカットする%
+	private static double cutoff = 0.2;  //Dotplotのノイズとしてカットする%
 	private static int window = 7;  //Dotplotを整えるときののウィンドウサイズ
 	
 	public static void main(String argv[]){
-		String filepath = "C:\\Users\\Shohei\\eclipse-workspace\\MultipeakSplitter\\file\\";
-//		String fileIn1 = "20171129Nozaki-1_A07.ab1";
+//		String filepath = "C:\\Users\\Shohei\\eclipse-workspace\\MultipeakSplitter\\file\\";
+		String filepath = "C:\\Users\\shohei_desk\\git\\MultipeakSplitter\\file\\";
+//		String fileIn2 = "20171129Nozaki-1_A07.ab1";
 		String fileIn2 = "20170214-Nozaki-2_B09.ab1";
 		String fileRef = "BBS1refseq.fa";
 //		String fileOut1 = "single.jpg";
@@ -22,34 +23,39 @@ public class test {
 		try {
 
 			File i1 = new File(filepath+fileIn2);
-			File fref = new File(filepath+fileRef);
-			BufferedReader bref = new BufferedReader(new FileReader(filepath+fileRef));
+//			File fref = new File(filepath+fileRef);
+//			BufferedReader bref = new BufferedReader(new FileReader(filepath+fileRef));
 			
-//			File o1 = new File(filepath+"out.csv");
+			File o1 = new File(filepath+"out2.csv");
 //			File o2 = new File(filepath+"basecall.csv");
 
 		  //トレースデータを読み込む
 			ABITrace trace = new ABITrace(i1);
 			
 			//RefSeq配列を読み込む
-			FastaFormat faref = new FastaFormat();
-			SimpleRichSequenceBuilder refseqBuilder = new SimpleRichSequenceBuilder();
-
-			
-			if(faref.canRead(fref)==false) {
-				System.out.println("Cannot read the reference sequence file");
-				bref.close();
-				return;
-			}
-			faref.readSequence(bref, faref.guessSymbolTokenization(fref), refseqBuilder);
-			
-			Sequence refseq = refseqBuilder.makeSequence();
-			System.out.println(refseq.seqString());
+//			FastaFormat faref = new FastaFormat();
+//			SimpleRichSequenceBuilder refseqBuilder = new SimpleRichSequenceBuilder();
+//
+//			
+//			if(faref.canRead(fref)==false) {
+//				System.out.println("Cannot read the reference sequence file");
+//				bref.close();
+//				return;
+//			}
+//			faref.readSequence(bref, faref.guessSymbolTokenization(fref), refseqBuilder);
+//			
+//			Sequence refseq = refseqBuilder.makeSequence();
+//			System.out.println(refseq.seqString());
 			
 //			System.out.println(trace.getSequenceLength());
 //			System.out.println(trace.getTraceLength());
 //			
-//			int[][] dna = getAllBasecallTrace(trace);
+			int[][] dna = getAllBasecallTrace(trace);
+			boolean[][] multi = getMultiBase(dna);
+			
+			FileWriter fw = new FileWriter(o1);
+			fw.write(BooleanBaseCSV(multi));
+			fw.close();
 			
 //			String output2 = BaseLocationCSV(base,a_tr,c_tr,g_tr,t_tr);
 //			
@@ -58,7 +64,7 @@ public class test {
 //			fw2.close();
 			
 		}catch(Exception e) {
-			System.out.println(e);
+			e.printStackTrace();
 		}
 		
 		System.out.println("end");
@@ -137,6 +143,28 @@ public class test {
 		return out;
 	}
 
+	private static String BooleanBaseCSV(boolean[][] boo){
+		String crlf = System.getProperty("line.separator");	
+		
+		String out = "A,C,G,T"+crlf;
+		String[] base = new String[4];
+		base[0]="A";
+		base[1]="C";
+		base[2]="G";
+		base[3]="T";
+		
+		for (int m=0; m < boo[1].length; m++){
+			for(int n=0; n<4; n++){
+				if(boo[n][m]){
+					out = out+base[n]+",";
+				}
+			}
+			out = out+crlf;
+		}
+		
+		return out;
+	}
+	
 	private static void CreateDotPlot(ABITrace trace, Sequence refseq) {
 		int[][] dna;
 		boolean[][] multi, ref, dotmap, trimedmap;
@@ -171,5 +199,35 @@ public class test {
 		}
 		
 		return dna;
+	}
+	
+	private static boolean[][] getMultiBase(int[][] dna){
+		int maxpeak = 0;
+		
+		boolean[][] multi = new boolean[4][dna[1].length];
+		
+		for(int m = 0; m<dna[1].length; m++){
+			
+			//最大値の検索
+			for(int n=0; n<4; n++){
+				if(maxpeak < dna[n][m]){
+					maxpeak = dna[n][m];
+				}
+			}
+			
+			//Multi peakの検出
+			for(int n = 0; n<4; n++){
+				if(maxpeak != 0 && (double)dna[n][m]/maxpeak >= cutoff){
+					multi[n][m]= true;
+				}else{
+					multi[n][m]= false;
+				}
+			}
+			
+			//maxpeakの初期化
+			maxpeak = 0;
+		}
+		
+		return multi;
 	}
 }
