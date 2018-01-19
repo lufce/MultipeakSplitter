@@ -73,79 +73,6 @@ public class test {
 		
 		System.out.println("end");
 	}
-	
-	private static String OutputCSV(int base[],int a[],int c[], int g[], int t[]) {
-		String crlf = System.getProperty("line.separator");
-		
-		String out = "basecall,";
-		for (int i =0; i < base.length; i++) {
-			out = out + String.valueOf(base[i])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		out = out + crlf;
-		
-		out = out + "A,";
-		for (int i =0; i < a.length; i++) {
-			out = out + String.valueOf(a[i])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		out = out + crlf;
-		
-		out = out + "C,";
-		for (int i =0; i < c.length; i++) {
-			out = out + String.valueOf(c[i])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		out = out + crlf;
-		
-		out = out + "G,";
-		for (int i =0; i < g.length; i++) {
-			out = out + String.valueOf(g[i])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		out = out + crlf;
-		
-		out = out + "T,";
-		for (int i =0; i < t.length; i++) {
-			out = out + String.valueOf(t[i])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		
-		return out;
-	}
-	
-	private static String BaseLocationCSV(int base[],int a[],int c[], int g[], int t[]) {
-		String crlf = System.getProperty("line.separator");
-		
-		String out = "Basecall_A,";
-		for (int i =0; i < base.length; i++) {
-			out = out + String.valueOf(a[base[i]])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		out = out + crlf;
-		
-		out = out + "Basecall_C,";
-		for (int i =0; i < base.length; i++) {
-			out = out + String.valueOf(c[base[i]])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		out = out + crlf;
-		
-		out = out + "Basecall_G,";
-		for (int i =0; i < base.length; i++) {
-			out = out + String.valueOf(g[base[i]])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		out = out + crlf;
-		
-		out = out + "Basecall_T,";
-		for (int i =0; i < base.length; i++) {
-			out = out + String.valueOf(t[base[i]])+ ",";
-		}
-		out.substring(0, out.length() -1 );
-		
-		return out;
-	}
 
 	private static String BooleanBaseCSV(boolean[][] boo){
 		String crlf = System.getProperty("line.separator");	
@@ -191,7 +118,7 @@ public class test {
 	
 	private static boolean[][] CreateDotPlot(ABITrace trace, Sequence refseq) {
 		
-		boolean[][] multi, ref, dotmap, trimedmap;
+		boolean[][] multi, ref;
 		
 		multi = getMultiBase(getAllBasecallTrace(trace));
 		ref = Refseq2Boolean(refseq.seqString());
@@ -323,4 +250,78 @@ public class test {
 		
 		return trimed;
 	}
+	
+//	private static String OutputCSV(int base[],int a[],int c[], int g[], int t[]) {
+//	String crlf = System.getProperty("line.separator");
+//	
+//	String out = "basecall,";
+//	for (int i =0; i < base.length; i++) {
+//		out = out + String.valueOf(base[i])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	out = out + crlf;
+//	
+//	out = out + "A,";
+//	for (int i =0; i < a.length; i++) {
+//		out = out + String.valueOf(a[i])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	out = out + crlf;
+//	
+//	out = out + "C,";
+//	for (int i =0; i < c.length; i++) {
+//		out = out + String.valueOf(c[i])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	out = out + crlf;
+//	
+//	out = out + "G,";
+//	for (int i =0; i < g.length; i++) {
+//		out = out + String.valueOf(g[i])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	out = out + crlf;
+//	
+//	out = out + "T,";
+//	for (int i =0; i < t.length; i++) {
+//		out = out + String.valueOf(t[i])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	
+//	return out;
+//}
+
+//private static String BaseLocationCSV(int base[],int a[],int c[], int g[], int t[]) {
+//	String crlf = System.getProperty("line.separator");
+//	
+//	String out = "Basecall_A,";
+//	for (int i =0; i < base.length; i++) {
+//		out = out + String.valueOf(a[base[i]])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	out = out + crlf;
+//	
+//	out = out + "Basecall_C,";
+//	for (int i =0; i < base.length; i++) {
+//		out = out + String.valueOf(c[base[i]])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	out = out + crlf;
+//	
+//	out = out + "Basecall_G,";
+//	for (int i =0; i < base.length; i++) {
+//		out = out + String.valueOf(g[base[i]])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	out = out + crlf;
+//	
+//	out = out + "Basecall_T,";
+//	for (int i =0; i < base.length; i++) {
+//		out = out + String.valueOf(t[base[i]])+ ",";
+//	}
+//	out.substring(0, out.length() -1 );
+//	
+//	return out;
+//}
+	
 }
