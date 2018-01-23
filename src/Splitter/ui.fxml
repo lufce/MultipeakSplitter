@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="296.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <VBox prefHeight="400.0" prefWidth="296.0">
+         <children>
+            <Label fx:id="lb_window" text="ウィンドウサイズ" />
+            <TextField fx:id="tb_window" text="7" />
+            <Label fx:id="lb_cutoff" text="カットオフ%" />
+            <TextField fx:id="tb_cutoff" text="10" />
+            <Button fx:id="bt_execute" mnemonicParsing="false" onAction="#onExecuteClick" onMouseDragReleased="#onExecuteOver" text="実行" />
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>
