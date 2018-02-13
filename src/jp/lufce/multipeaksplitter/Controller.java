@@ -2,7 +2,6 @@ package jp.lufce.multipeaksplitter;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Random;
 import java.util.ResourceBundle;
 
 import javafx.event.ActionEvent;
@@ -10,6 +9,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -18,6 +19,8 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.paint.Color;
@@ -25,7 +28,14 @@ import javafx.scene.transform.Affine;
 import javafx.stage.FileChooser;
 
 public class Controller implements Initializable {
-	private String crlf = System.getProperty("line.separator");
+	final private String CRLF = System.getProperty("line.separator");
+	final private double GRID_LINE_WIDTH = 0.01;
+	final private double SAMPLE_SCALE_MAX = 20;
+	final private double SAMPLE_SCALE_MIN = 0.2;
+	final private double SAMPLE_SCALE_DEFAULT = 1;
+	
+	
+	private Alert alert;
 	
 	private MultipeakDotplot multiDot;
 	private MultipeakDotplot revcomMultiDot;
@@ -64,6 +74,7 @@ public class Controller implements Initializable {
 	@FXML protected Canvas cvSample;
 	@FXML protected Slider sliderSamplePosition;
 	@FXML protected Slider sliderSampleScale;
+	@FXML protected TextField tfSampleZoom;
 	private int sliderSampleValue;
 	private GraphicsContext gcSample;
 	private int sampleCanvasHeight;
@@ -72,7 +83,7 @@ public class Controller implements Initializable {
 	
 	private int[][] multiIntensity;
 	private int sampleDrawInterval = 1;
-	private double sampleDrawScale = 1;
+	private double sampleDrawScale = SAMPLE_SCALE_DEFAULT;
 	
 	@FXML protected Label lb_mxx;
 	@FXML protected Label lb_mxy;
@@ -107,6 +118,9 @@ public class Controller implements Initializable {
 	private Affine aff = new Affine();
 	private static final Affine IDENTITY_TRANSFORM = new Affine(1f,0f,0f,0f,1f,0);
 	
+	
+//========================== File input =============================
+	
 	@FXML
 	protected void bSampleClick(ActionEvent e){
 		FileChooser filechooser = new FileChooser();
@@ -127,17 +141,19 @@ public class Controller implements Initializable {
 		}
 	}
 	
+//======================== Making dotplot map ================================
+	
 	@FXML
 	protected void bMakeDotplotClick(ActionEvent e) {
 		//TODO setValueが例外を投げるようになったら、ちゃんと例外処理する。
 		
-		taLog.appendText("start making dotplot..." + crlf);
+		taLog.appendText("start making dotplot..." + CRLF);
 		try {
 			sample = new Ab1Sequence(new File(taSamplePath.getText()));
 			refseq = new ReferenceSequence(new File(taReferencePath.getText()));
 			
 			if(this.setValueOfCutoffWindow() == false) {
-				taLog.appendText("setValue failed"+crlf);
+				taLog.appendText("setValue failed"+CRLF);
 				return;
 			}
 			
@@ -157,7 +173,7 @@ public class Controller implements Initializable {
 			}
 			
 			this.setReferenceSequenceString();
-			taLog.appendText("end making dotplot"+crlf);
+			taLog.appendText("end making dotplot"+CRLF);
 			
 			multiIntensity = sample.getMultiAllIntensity();
 			this.DrawSampleWave(0);
@@ -167,6 +183,9 @@ public class Controller implements Initializable {
 			sliderSamplePosition.setVisible(true);
 			
 			sliderSampleScale.setVisible(true);
+			
+			tfSampleZoom.setText(String.valueOf(sampleDrawScale));
+			tfSampleZoom.setVisible(true);
 			
 			tabPane1.getSelectionModel().select(tabSequence);
 
@@ -180,11 +199,11 @@ public class Controller implements Initializable {
 		//TODO setValueが例外を投げるようになったら、ちゃんと例外処理する。
 		
 		if (multiDot == null) {
-			taLog.appendText("Remake failed" + crlf);
+			taLog.appendText("Remake failed" + CRLF);
 		}else {
-			taLog.appendText("start remaking dotplot"+crlf);
+			taLog.appendText("start remaking dotplot"+CRLF);
 			if(this.setValueOfCutoffWindow()==false) {
-				taLog.appendText("setValue failed" + crlf);
+				taLog.appendText("setValue failed" + CRLF);
 				return;
 			}
 			sample.makeMultipeak(cutoff);
@@ -192,7 +211,7 @@ public class Controller implements Initializable {
 			windowedDotmap = multiDot.getWindowedDotPlot();
 			this.EraseCanvas(gc1);
 			this.DrawDotMap();
-			taLog.appendText("end remaking dotplot"+crlf);
+			taLog.appendText("end remaking dotplot"+CRLF);
 			
 			tabPane1.getSelectionModel().select(tabSequence);
 		}
@@ -214,12 +233,12 @@ public class Controller implements Initializable {
 		cutoff = Integer.parseInt(tfCutoff.getText());
 		
 		if(cutoff < 0 || 100 <= cutoff) {
-			taLog.appendText("invalid cutoff value" + crlf);
+			taLog.appendText("invalid cutoff value" + CRLF);
 			invalid = true;
 		}
 		
 		if( refseq.getSequenceLength() < window || sample.getSequenceLength() < window) {
-			taLog.appendText("window size is beyond sequence length" + crlf);
+			taLog.appendText("window size is beyond sequence length" + CRLF);
 			invalid = true;
 		}
 		
@@ -238,35 +257,82 @@ public class Controller implements Initializable {
 		}
 	}
 	
+	private void EraseCanvas(GraphicsContext gc) {
+		
+		if(revcomFlag && gc.equals(gc1)) {
+			gc.setFill(Color.BLACK);
+		}else {
+			gc.setFill(Color.WHITE);
+		}
+		
+		gc.setTransform(IDENTITY_TRANSFORM);
+		gc.fillRect(0, 0, CanvasWidth, CanvasHeight);
+	}
+	
+	private void DrawDotMap() {
+//		scaled_dotsize = aff.getMxx()*dotsize;
+		
+		boolean[][] map;
+		
+		gc1.setLineWidth(GRID_LINE_WIDTH);
+		
+		if(revcomFlag) {
+			gc1.setFill(Color.WHITE);
+			gc1.setStroke(Color.WHITE);
+			map = windowedRevcomDotmap;
+		}else {
+			gc1.setFill(Color.BLACK);
+			gc1.setStroke(Color.BLACK);
+			map = windowedDotmap;
+		}
+		
+		gc1.setTransform(aff);
+		
+		//Draw dot as filled rectangles.
+		for(int m = 0; m < map.length; m++) {
+			for(int n = 0; n < map[0].length; n++) {
+				if(map[m][n]) {
+					//gc.fillRect(m*scaled_dotsize, n*scaled_dotsize, scaled_dotsize, scaled_dotsize);
+					gc1.fillRect(m*dotsize, n*dotsize, dotsize, dotsize);
+				}
+			}
+		}
+		
+		//Draw lines for grids.
+		for(int m = 1; m < map.length ; m++) {
+			gc1.strokeLine(m*dotsize, 0, m*dotsize, map[0].length * dotsize);
+		}
+		
+		for(int n = 1; n < map[0].length; n++) {
+			gc1.strokeLine(0, n*dotsize, map.length * dotsize, n*dotsize);
+		}
+		
+		DrawAffine(aff);
+	}
+	
+	private void HighlightSelectedDotSequence() {
+		if(forwardSequenceLength > 0) {
+			gc1.setFill(Color.RED);
+			
+			for(int N = 0; N < forwardSequenceLength; N++) {
+				gc1.fillRect( (forwardStartPoint[0]-1 + N)*dotsize, (forwardStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
+			}
+		}
+		if(reverseSequenceLength > 0) {
+			gc1.setFill(Color.RED);
+			
+			for(int N = 0; N < reverseSequenceLength; N++) {
+				gc1.fillRect( (reverseStartPoint[0]-1 - N)*dotsize, (reverseStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
+			}
+		}
+	}
+	
+//======================= Mouse-action to move the dotmap position ===============================
+	
 	@FXML
 	protected void cv1MouseMoved(MouseEvent e) {
 		MouseX = e.getX();
 		MouseY = e.getY();
-	}
-	
-	@FXML
-	protected void cv1MouseClicked(MouseEvent e) {
-		if(drag == false) {
-			
-			double ClickX = e.getX();
-			double ClickY = e.getY();
-			
-			DotX = (int)Math.ceil((ClickX - aff.getTx() ) / (dotsize * aff.getMxx()) );
-			DotY = (int)Math.ceil((ClickY - aff.getTy() ) / (dotsize * aff.getMxx()) );
-			
-			if (DotX > 0 && DotY > 0) {
-				this.SearchSequence();
-				this.EraseCanvas(gc1);
-				gc1.setTransform(aff);
-				this.DrawDotMap();
-				this.HighlightSelectedDotSequence();
-				
-				taSelectedForwardSequence.setText(refseq.getSeqSubstring(forwardStartPoint[1], forwardSequenceLength));
-				taSelectedReverseSequence.setText(refseq.getSeqSubstring(reverseStartPoint[1], reverseSequenceLength));
-			}
-		}else {
-			drag = false;
-		}
 	}
 	
 	@FXML
@@ -298,81 +364,6 @@ public class Controller implements Initializable {
 		drag = true;
 	}
 	
-	private void EraseCanvas(GraphicsContext gc) {
-		
-		if(revcomFlag && gc.equals(gc1)) {
-			gc.setFill(Color.BLACK);
-		}else {
-			gc.setFill(Color.WHITE);
-		}
-		
-		gc.setTransform(IDENTITY_TRANSFORM);
-		gc.fillRect(0, 0, CanvasWidth, CanvasHeight);
-	}
-	
-//	void DrawMousePoint(double x, double y) {
-//		gc.setFill(Color.BLACK);
-//		gc.fillRect(x, y, 2, 2);
-//	}
-	
-	private void RandomMap(boolean[][] map) {
-		Random random = new Random();
-		
-		for(int m = 0; m < map.length; m++) {
-			for(int n = 0; n < map[0].length; n++) {
-				if(random.nextInt(2) >= 1) {
-					map[m][n] = true;
-				}else {
-					map[m][n] = false;
-				}
-			}
-		}
-	}
-	
-	private void DrawDotMap() {
-//		scaled_dotsize = aff.getMxx()*dotsize;
-		
-		boolean[][] map;
-		
-		if(revcomFlag) {
-			gc1.setFill(Color.WHITE);
-			map = windowedRevcomDotmap;
-		}else {
-			gc1.setFill(Color.BLACK);
-			map = windowedDotmap;
-		}
-		
-		gc1.setTransform(aff);
-		
-		for(int m = 0; m < map.length; m++) {
-			for(int n = 0; n < map[0].length; n++) {
-				if(map[m][n]) {
-					//gc.fillRect(m*scaled_dotsize, n*scaled_dotsize, scaled_dotsize, scaled_dotsize);
-					gc1.fillRect(m*dotsize, n*dotsize, dotsize, dotsize);
-				}
-			}
-		}
-		
-		DrawAffine(aff);
-	}
-	
-	private void HighlightSelectedDotSequence() {
-		if(forwardSequenceLength > 0) {
-			gc1.setFill(Color.RED);
-			
-			for(int N = 0; N < forwardSequenceLength; N++) {
-				gc1.fillRect( (forwardStartPoint[0]-1 + N)*dotsize, (forwardStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
-			}
-		}
-		if(reverseSequenceLength > 0) {
-			gc1.setFill(Color.RED);
-			
-			for(int N = 0; N < reverseSequenceLength; N++) {
-				gc1.fillRect( (reverseStartPoint[0]-1 - N)*dotsize, (reverseStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
-			}
-		}
-	}
-	
 	@FXML
 	protected void cv1Scroll(ScrollEvent e) {
 	//TODO 四隅の余白部分が均等になるように縮小されるよう修正しないといけない。
@@ -389,13 +380,31 @@ public class Controller implements Initializable {
 		
 	}
 	
-	private void DrawAffine(Affine aff) {
-		lb_mxx.setText(Double.toString((double)(Math.round(aff.getMxx() *1000))/1000 ));
-		lb_mxy.setText(Double.toString((double)(Math.round(aff.getMxy() *1000))/1000 ));
-		lb_tx.setText(Double.toString((double)(Math.round(aff.getTx() *1000))/1000 ));
-		lb_myx.setText(Double.toString((double)(Math.round(aff.getMyx() *1000))/1000 ));
-		lb_myy.setText(Double.toString((double)(Math.round(aff.getMyy() *1000))/1000 ));
-		lb_ty.setText(Double.toString((double)(Math.round(aff.getTy() *1000))/1000 ));
+//======================== For extraction of selected sequence =======================
+	
+	@FXML
+	protected void cv1MouseClicked(MouseEvent e) {
+		if(drag == false) {
+			
+			double ClickX = e.getX();
+			double ClickY = e.getY();
+			
+			DotX = (int)Math.ceil((ClickX - aff.getTx() ) / (dotsize * aff.getMxx()) );
+			DotY = (int)Math.ceil((ClickY - aff.getTy() ) / (dotsize * aff.getMxx()) );
+			
+			if (DotX > 0 && DotY > 0) {
+				this.SearchSequence();
+				this.EraseCanvas(gc1);
+				gc1.setTransform(aff);
+				this.DrawDotMap();
+				this.HighlightSelectedDotSequence();
+				
+				taSelectedForwardSequence.setText(refseq.getSeqSubstring(forwardStartPoint[1], forwardSequenceLength));
+				taSelectedReverseSequence.setText(refseq.getSeqSubstring(reverseStartPoint[1], reverseSequenceLength));
+			}
+		}else {
+			drag = false;
+		}
 	}
 	
 	private void SearchSequence() {
@@ -451,12 +460,16 @@ public class Controller implements Initializable {
 		}
 	}
 	
+//======================= Refseq viewer==================================
+	
 	private void setReferenceSequenceString() {
 		taReferenceSequence.setText("");
 		for(int n=0; n < refseq.getSequenceLength(); n++) {
-			taReferenceSequence.appendText(refseq.getSeqString().charAt(n) + crlf);
+			taReferenceSequence.appendText(refseq.getSeqString().charAt(n) + CRLF);
 		}
 	}
+	
+//======================== Sample wave viewer ===========================
 	
 	private void DrawSampleWave(int start) {
 		
@@ -526,8 +539,43 @@ public class Controller implements Initializable {
 	
 	private void sliderSampleScaleSlide() {
 		sampleDrawScale = sliderSampleScale.getValue();
+		tfSampleZoom.setText(String.format("%1$.1f", sampleDrawScale));
 		this.DrawSampleWave(sliderSampleValue);
 	}
+	
+	@FXML
+	protected void tfSampleZoomKeyPressed(KeyEvent e) {
+		double scale;
+		
+		if(e.getCode() == KeyCode.ENTER) {
+			
+			try {
+				scale = Double.parseDouble(tfSampleZoom.getText());
+				
+				if(SAMPLE_SCALE_MIN <= scale && scale <= SAMPLE_SCALE_MAX) {
+					sampleDrawScale = scale;
+					sliderSampleScale.setValue(scale);
+					this.DrawSampleWave(sliderSampleValue);
+				}else {
+					alert = new Alert(AlertType.INFORMATION);
+					alert.setTitle("Zoom value is out of range.");
+					alert.setHeaderText(null);
+					alert.setContentText("Zoom value should be between " + SAMPLE_SCALE_MIN + " to " + SAMPLE_SCALE_MAX + ".");
+					alert.show();
+				}
+			}catch(NumberFormatException exception) {
+				alert = new Alert(AlertType.INFORMATION);
+				alert.setTitle("Invalid number");
+				alert.setHeaderText(null);
+				alert.setContentText("Zoom value is not number.");
+				alert.show();
+			}
+			
+			
+		}
+	}
+	
+//==================== Reverse complement processing ===================
 	
 	@FXML
 	protected void checkRevcomClick() {
@@ -535,6 +583,18 @@ public class Controller implements Initializable {
 		this.EraseCanvas(gc1);
 		this.DrawDotMap();
 	}
+	
+//===================== For debug or etc. ==========================
+	
+	private void DrawAffine(Affine aff) {
+		lb_mxx.setText(Double.toString((double)(Math.round(aff.getMxx() *1000))/1000 ));
+		lb_mxy.setText(Double.toString((double)(Math.round(aff.getMxy() *1000))/1000 ));
+		lb_tx.setText(Double.toString((double)(Math.round(aff.getTx() *1000))/1000 ));
+		lb_myx.setText(Double.toString((double)(Math.round(aff.getMyx() *1000))/1000 ));
+		lb_myy.setText(Double.toString((double)(Math.round(aff.getMyy() *1000))/1000 ));
+		lb_ty.setText(Double.toString((double)(Math.round(aff.getTy() *1000))/1000 ));
+	}
+	
 	
 	@Override
 	public void initialize(URL location, ResourceBundle rb) {
@@ -547,18 +607,20 @@ public class Controller implements Initializable {
 		sampleCanvasHeight = (int)Math.floor(cvSample.getHeight());
 		sampleCanvasWidth = (int)Math.floor(cvSample.getWidth());
 		
+		tfSampleZoom.setVisible(false);
+		
 		sliderSamplePosition.setVisible(false);
 		
 		sliderSampleScale.setValue(sampleDrawScale);
-		sliderSampleScale.setMin(0.2);
-		sliderSampleScale.setMax(20);
+		sliderSampleScale.setMin(SAMPLE_SCALE_MIN);
+		sliderSampleScale.setMax(SAMPLE_SCALE_MAX);
 		sliderSampleScale.valueProperty().addListener((a, b, c) -> this.sliderSampleScaleSlide() );
 		sliderSampleScale.setVisible(false);
 		
 		EraseCanvas(gc1);
 		EraseCanvas(gcSample);
 		
-		taLog.appendText("Initialization finished."+crlf);
+		taLog.appendText("Initialization finished."+CRLF);
 		
 		taReferenceSequence.setEditable(false);
 

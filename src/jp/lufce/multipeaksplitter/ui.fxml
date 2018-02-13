@@ -55,5 +55,7 @@
       <Canvas fx:id="cvSample" height="100.0" layoutX="386.0" layoutY="14.0" width="600.0" />
       <Slider fx:id="sliderSamplePosition" layoutX="386.0" layoutY="114.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="600.0" />
       <Slider fx:id="sliderSampleScale" layoutX="365.0" layoutY="14.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="100.0" prefWidth="14.0" />
+      <Label layoutX="322.0" layoutY="14.0" text="Zoom" />
+      <TextField fx:id="tfSampleZoom" layoutX="322.0" layoutY="31.0" onKeyPressed="#tfSampleZoomKeyPressed" prefHeight="25.0" prefWidth="32.0" />
    </children>
 </AnchorPane>
