@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jp.lufce.multipeaksplitter.Controller">
+   <children>
+      <Canvas fx:id="cv1" height="600.0" layoutX="386.0" layoutY="132.0" onMouseClicked="#cv1MouseClicked" onMouseDragged="#cv1MouseDragged" onMouseMoved="#cv1MouseMoved" onMousePressed="#cv1MousePressed" onScroll="#cv1Scroll" width="600.0" />
+      <TabPane fx:id="tabPane1" layoutX="14.0" layoutY="14.0" prefHeight="600.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
+        <tabs>
+          <Tab fx:id="tabFile" text="FIle">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="422.0" prefWidth="200.0">
+                     <children>
+                        <Button fx:id="bSample" layoutX="14.0" layoutY="15.0" mnemonicParsing="false" onAction="#bSampleClick" text="Sample File" />
+                        <Label fx:id="lb_mxx" layoutX="25.0" layoutY="255.0" text="Label" wrapText="true" />
+                        <Label fx:id="lb_mxy" layoutX="74.0" layoutY="255.0" text="Label" wrapText="true" />
+                        <Label fx:id="lb_tx" layoutX="123.0" layoutY="255.0" text="Label" wrapText="true" />
+                        <Label fx:id="lb_ty" layoutX="123.0" layoutY="295.0" text="Label" wrapText="true" />
+                        <Label fx:id="lb_myy" layoutX="74.0" layoutY="295.0" text="Label" wrapText="true" />
+                        <Label fx:id="lb_myx" layoutX="25.0" layoutY="295.0" text="Label" wrapText="true" />
+                        <TextArea fx:id="taSamplePath" layoutX="16.0" layoutY="46.0" prefHeight="30.0" prefWidth="175.0" text="C:\Users\Shohei\eclipse-workspace\MultipeakSplitter\file\sec8.ab1" wrapText="true" />
+                        <Button fx:id="bReference" layoutX="13.0" layoutY="88.0" mnemonicParsing="false" onAction="#bReferenceClick" text="Reference File" />
+                        <TextArea fx:id="taReferencePath" layoutX="16.0" layoutY="121.0" prefHeight="30.0" prefWidth="175.0" text="C:\Users\Shohei\eclipse-workspace\MultipeakSplitter\file\sec8.fa" wrapText="true" />
+                        <Button fx:id="bMakeDotplot" layoutX="13.0" layoutY="159.0" mnemonicParsing="false" onAction="#bMakeDotplotClick" text="Make Dotplot" />
+                        <TextArea fx:id="taLog" layoutX="3.0" layoutY="330.0" prefHeight="236.0" prefWidth="194.0" promptText="Log Area" wrapText="true" />
+                     </children>
+                  </AnchorPane>
+            </content>
+          </Tab>
+          <Tab fx:id="tabSequence" text="Sequence">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="627.0" prefWidth="200.0">
+                     <children>
+                        <Label layoutX="14.0" layoutY="14.0" text="Cutoff (%)" />
+                        <Label layoutX="86.0" layoutY="14.0" text="Window Size" />
+                        <TextField fx:id="tfCutoff" layoutX="12.0" layoutY="31.0" prefHeight="25.0" prefWidth="58.0" text="10" />
+                        <TextField fx:id="tfWindow" layoutX="86.0" layoutY="31.0" prefHeight="25.0" prefWidth="58.0" text="7" />
+                        <Button fx:id="bRemake" layoutX="12.0" layoutY="66.0" mnemonicParsing="false" onAction="#bRemakeClick" text="Remake Dotplot" />
+                        <Label layoutX="13.0" layoutY="177.0" text="Selected Foward Sequence" />
+                        <TextArea fx:id="taSelectedForwardSequence" layoutX="8.0" layoutY="194.0" prefHeight="160.0" prefWidth="185.0" wrapText="true" />
+                        <Button fx:id="bResetView" layoutX="13.0" layoutY="97.0" mnemonicParsing="false" onAction="#bResetViewClick" text="Resete View" />
+                        <TextArea fx:id="taSelectedReverseSequence" layoutX="8.0" layoutY="387.0" prefHeight="160.0" prefWidth="185.0" wrapText="true" />
+                        <Label layoutX="13.0" layoutY="370.0" text="Selected Reverse Sequence" />
+                        <CheckBox fx:id="checkRevcom" layoutX="17.0" layoutY="135.0" mnemonicParsing="false" onMouseClicked="#checkRevcomClick" text="Reverse Complement" />
+                     </children></AnchorPane>
+            </content>
+          </Tab>
+        </tabs>
+      </TabPane>
+      <Canvas fx:id="cvReference" height="600.0" layoutX="329.0" layoutY="132.0" width="50.0" />
+      <TextArea fx:id="taReferenceSequence" layoutX="281.0" layoutY="132.0" prefHeight="600.0" prefWidth="34.0" />
+      <Canvas fx:id="cvSample" height="100.0" layoutX="386.0" layoutY="14.0" width="600.0" />
+      <Slider fx:id="sliderSamplePosition" layoutX="386.0" layoutY="114.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="600.0" />
+      <Slider fx:id="sliderSampleScale" layoutX="365.0" layoutY="14.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="100.0" prefWidth="14.0" />
+   </children>
+</AnchorPane>
