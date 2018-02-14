@@ -29,13 +29,13 @@ import javafx.stage.FileChooser;
 
 public class Controller implements Initializable {
 	final private String CRLF = System.getProperty("line.separator");
-	final private double GRID_LINE_WIDTH = 0.01;
+	final private double GRID_LINE_WIDTH = 0.025;
 	final private double SAMPLE_SCALE_MAX = 20;
 	final private double SAMPLE_SCALE_MIN = 0.2;
 	final private double SAMPLE_SCALE_DEFAULT = 1;
+	final private double SAMPLE_WAVELINE_WIDTH = 0.5;
 	
-	
-	private Alert alert;
+	private Alert alertDialog;
 	
 	private MultipeakDotplot multiDot;
 	private MultipeakDotplot revcomMultiDot;
@@ -79,6 +79,10 @@ public class Controller implements Initializable {
 	private GraphicsContext gcSample;
 	private int sampleCanvasHeight;
 	private int sampleCanvasWidth;
+	private int sampleDrawedBaseStart = 0;
+	private int sampleDrawedBaseEnd = 0;
+	private int sampleWaveStart;
+	private int sampleWaveEnd;
 	@FXML protected TextArea taReferenceSequence;
 	
 	private int[][] multiIntensity;
@@ -142,6 +146,15 @@ public class Controller implements Initializable {
 	}
 	
 //======================== Making dotplot map ================================
+
+	private void updateDotmapScreen(boolean highlighting) {
+		this.EraseCanvas(gc1);
+		this.DrawDotMap();
+		
+		if(highlighting == true) {
+			this.HighlightSelectedDotSequence();
+		}
+	}
 	
 	@FXML
 	protected void bMakeDotplotClick(ActionEvent e) {
@@ -164,14 +177,6 @@ public class Controller implements Initializable {
 			windowedDotmap = multiDot.getWindowedDotPlot();
 			windowedRevcomDotmap = revcomMultiDot.getWindowedDotPlot();
 			
-			this.EraseCanvas(gc1);
-			
-			if(revcomFlag) {
-				this.DrawDotMap();
-			}else {
-				this.DrawDotMap();
-			}
-			
 			this.setReferenceSequenceString();
 			taLog.appendText("end making dotplot"+CRLF);
 			
@@ -188,6 +193,12 @@ public class Controller implements Initializable {
 			tfSampleZoom.setVisible(true);
 			
 			tabPane1.getSelectionModel().select(tabSequence);
+			
+			forwardSequenceLength = 0;
+			reverseSequenceLength = 0;
+			
+
+			this.updateDotmapScreen(false);
 
 		}catch(Exception exception) {
 			taLog.setText(exception.getMessage());
@@ -275,7 +286,16 @@ public class Controller implements Initializable {
 		boolean[][] map;
 		
 		gc1.setLineWidth(GRID_LINE_WIDTH);
+		gc1.setTransform(aff);
 		
+		//Highlight sample wave range
+		this.calculateRangeOfDrawedBase(sample.getBasecalls(), sampleWaveStart ,sampleWaveEnd);
+		
+		gc1.setFill(Color.YELLOW);
+		gc1.fillRect(sampleDrawedBaseStart, 0, (sampleDrawedBaseEnd - sampleDrawedBaseStart + 1)*dotsize, refseq.getSequenceLength()*dotsize);
+		
+		
+		//Draw dot as filled rectangles.
 		if(revcomFlag) {
 			gc1.setFill(Color.WHITE);
 			gc1.setStroke(Color.WHITE);
@@ -286,9 +306,6 @@ public class Controller implements Initializable {
 			map = windowedDotmap;
 		}
 		
-		gc1.setTransform(aff);
-		
-		//Draw dot as filled rectangles.
 		for(int m = 0; m < map.length; m++) {
 			for(int n = 0; n < map[0].length; n++) {
 				if(map[m][n]) {
@@ -473,14 +490,17 @@ public class Controller implements Initializable {
 	
 	private void DrawSampleWave(int start) {
 		
-		double[][] drawIntensity = this.getDrawIntensity(start);
+		sampleWaveStart = start;
+		sampleWaveEnd = sampleWaveStart + sampleCanvasWidth * sampleDrawInterval;
+		
+		double[][] drawIntensity = this.getDrawIntensity(sampleWaveStart);
 		double localMax = this.getMaxIntensity(drawIntensity);
 		Color[] baseColor = {Color.RED, Color.GREEN, Color.ORANGE, Color.BLACK};
 		drawIntensity = this.convertDrawIntensity(drawIntensity, localMax);
 		
 		this.EraseCanvas(gcSample);
 		
-		gcSample.setLineWidth(0.5);
+		gcSample.setLineWidth(SAMPLE_WAVELINE_WIDTH);
 		
 		for(int m = 0; m < drawIntensity[0].length - 1; m++) {
 			for(int n = 0; n < 4; n++) {
@@ -516,7 +536,7 @@ public class Controller implements Initializable {
 	
 	private double[][] getDrawIntensity(int start) throws ArrayIndexOutOfBoundsException {
 
-		if(start + sampleCanvasWidth * sampleDrawInterval > multiIntensity[0].length) {
+		if(sampleWaveEnd > multiIntensity[0].length) {
 			System.out.println("out of bounds");
 			throw new ArrayIndexOutOfBoundsException();
 		}
@@ -535,6 +555,9 @@ public class Controller implements Initializable {
 	private void sliderSamplePositionSlide() {
 		sliderSampleValue = (int)Math.round(sliderSamplePosition.getValue());
 		this.DrawSampleWave(sliderSampleValue);
+		this.EraseCanvas(gc1);
+		this.DrawDotMap();
+		this.HighlightSelectedDotSequence();
 	}
 	
 	private void sliderSampleScaleSlide() {
@@ -557,21 +580,42 @@ public class Controller implements Initializable {
 					sliderSampleScale.setValue(scale);
 					this.DrawSampleWave(sliderSampleValue);
 				}else {
-					alert = new Alert(AlertType.INFORMATION);
-					alert.setTitle("Zoom value is out of range.");
-					alert.setHeaderText(null);
-					alert.setContentText("Zoom value should be between " + SAMPLE_SCALE_MIN + " to " + SAMPLE_SCALE_MAX + ".");
-					alert.show();
+					alertDialog = new Alert(AlertType.INFORMATION);
+					alertDialog.setTitle("Zoom value is out of range.");
+					alertDialog.setHeaderText(null);
+					alertDialog.setContentText("Zoom value should be between " + SAMPLE_SCALE_MIN + " to " + SAMPLE_SCALE_MAX + ".");
+					alertDialog.show();
 				}
 			}catch(NumberFormatException exception) {
-				alert = new Alert(AlertType.INFORMATION);
-				alert.setTitle("Invalid number");
-				alert.setHeaderText(null);
-				alert.setContentText("Zoom value is not number.");
-				alert.show();
+				alertDialog = new Alert(AlertType.INFORMATION);
+				alertDialog.setTitle("Invalid number");
+				alertDialog.setHeaderText(null);
+				alertDialog.setContentText("Zoom value is not number.");
+				alertDialog.show();
 			}
-			
-			
+		}
+	}
+	
+	private void calculateRangeOfDrawedBase(int[] basecall, int start, int end) {
+		
+		if( start <= basecall[0] ) {
+			sampleDrawedBaseStart = 0;
+		}else {
+			for(int m = 1; m < basecall.length; m++) {
+				if(basecall[m-1] < start && start <= basecall[m]) {
+					sampleDrawedBaseStart = m;
+				}
+			}
+		}
+		
+		if( basecall[basecall.length - 1] <= end ) {
+			sampleDrawedBaseEnd = basecall.length - 1;
+		}else {
+			for(int m = sampleDrawedBaseStart; m < basecall.length - 1; m++) {
+				if(basecall[m] <= end && end < basecall[m+1]) {
+					sampleDrawedBaseEnd = m;
+				}
+			}
 		}
 	}
 	

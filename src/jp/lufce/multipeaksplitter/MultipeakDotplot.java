@@ -78,8 +78,6 @@ public class MultipeakDotplot {
 	boolean[][] trimed = new boolean[dotplot.length - window + 1][dotplot[0].length - window + 1];
 	boolean point;
 	
-	System.out.println(dotplot.length +" "+ String.valueOf(dotplot[0].length - window + 1));
-	
 	for(int m = 0; m < trimed.length; m++) {
 		for(int n = 0; n < trimed[0].length; n++) {
 			
