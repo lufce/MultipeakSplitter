@@ -24,16 +24,20 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.transform.Affine;
 import javafx.stage.FileChooser;
 
 public class Controller implements Initializable {
+	
 	final private String CRLF = System.getProperty("line.separator");
 	final private double GRID_LINE_WIDTH = 0.025;
 	final private double SAMPLE_SCALE_MAX = 20;
 	final private double SAMPLE_SCALE_MIN = 0.2;
 	final private double SAMPLE_SCALE_DEFAULT = 1;
 	final private double SAMPLE_WAVELINE_WIDTH = 0.5;
+	final private Color[] BASE_COLOR = {Color.RED, Color.GREEN, Color.ORANGE, Color.BLACK};
+	// The index 0 to 3 associates with A, C, G, and T, respectively.
 	
 	private Alert alertDialog;
 	
@@ -495,7 +499,7 @@ public class Controller implements Initializable {
 		
 		double[][] drawIntensity = this.getDrawIntensity(sampleWaveStart);
 		double localMax = this.getMaxIntensity(drawIntensity);
-		Color[] baseColor = {Color.RED, Color.GREEN, Color.ORANGE, Color.BLACK};
+		
 		drawIntensity = this.convertDrawIntensity(drawIntensity, localMax);
 		
 		this.EraseCanvas(gcSample);
@@ -504,7 +508,7 @@ public class Controller implements Initializable {
 		
 		for(int m = 0; m < drawIntensity[0].length - 1; m++) {
 			for(int n = 0; n < 4; n++) {
-				gcSample.setStroke(baseColor[n]);
+				gcSample.setStroke(BASE_COLOR[n]);
 				gcSample.strokeLine(m, drawIntensity[n][m], m+1, drawIntensity[n][m+1]);
 			}
 		}
@@ -667,6 +671,19 @@ public class Controller implements Initializable {
 		taLog.appendText("Initialization finished."+CRLF);
 		
 		taReferenceSequence.setEditable(false);
+		
+		gcSample.setFont(new Font("Arial", 12));
+		gcSample.fillText(gcSample.getFont().getName(), 10, 10);
+		gcSample.setFill(BASE_COLOR[0]);
+		gcSample.fillText("A", 11, 20);
+		gcSample.fillText("A", 21, 20);
+		gcSample.setFill(BASE_COLOR[1]);
+		gcSample.fillText("C", 10, 30);
+		gcSample.fillText("C", 20, 30);
+		gcSample.setFill(BASE_COLOR[2]);
+		gcSample.fillText("G", 10, 40);
+		gcSample.setFill(BASE_COLOR[3]);
+		gcSample.fillText("T", 11, 50);
 
 	}
 }
