@@ -37,6 +37,7 @@ public class Controller implements Initializable {
 	final private double SAMPLE_SCALE_DEFAULT = 1;
 	final private double SAMPLE_WAVELINE_WIDTH = 0.5;
 	final private Color[] BASE_COLOR = {Color.RED, Color.GREEN, Color.ORANGE, Color.BLACK};
+	final private String[] BASE = {"A","C","G","T"};
 	// The index 0 to 3 associates with A, C, G, and T, respectively.
 	
 	private Alert alertDialog;
@@ -188,7 +189,7 @@ public class Controller implements Initializable {
 			this.DrawSampleWave(0);
 			
 			sliderSamplePosition.setMax(Math.floor((sample.getTraceLength() - sliderSamplePosition.getWidth()) / sampleDrawInterval));
-			sliderSamplePosition.valueProperty().addListener( (a, b, c) -> this.sliderSamplePositionSlide() );
+			sliderSamplePosition.valueProperty().addListener( (a, b, c) -> this.sliderSamplePositionSlide(c.intValue()) );
 			sliderSamplePosition.setVisible(true);
 			
 			sliderSampleScale.setVisible(true);
@@ -227,7 +228,7 @@ public class Controller implements Initializable {
 			this.EraseCanvas(gc1);
 			this.DrawDotMap();
 			taLog.appendText("end remaking dotplot"+CRLF);
-			
+			this.DrawSampleWave(sampleWaveStart);
 			tabPane1.getSelectionModel().select(tabSequence);
 		}
 	}
@@ -493,12 +494,16 @@ public class Controller implements Initializable {
 //======================== Sample wave viewer ===========================
 	
 	private void DrawSampleWave(int start) {
+		//TODO RevComに対応させる
 		
 		sampleWaveStart = start;
 		sampleWaveEnd = sampleWaveStart + sampleCanvasWidth * sampleDrawInterval;
 		
 		double[][] drawIntensity = this.getDrawIntensity(sampleWaveStart);
 		double localMax = this.getMaxIntensity(drawIntensity);
+		boolean[][] multiMap = sample.getMultipeakMap();
+		int[] basecall = sample.getBasecalls();
+		int pointer = sampleDrawedBaseStart;
 		
 		drawIntensity = this.convertDrawIntensity(drawIntensity, localMax);
 		
@@ -511,13 +516,24 @@ public class Controller implements Initializable {
 				gcSample.setStroke(BASE_COLOR[n]);
 				gcSample.strokeLine(m, drawIntensity[n][m], m+1, drawIntensity[n][m+1]);
 			}
+			
+			if(basecall[pointer] == m + sampleWaveStart) {
+				for(int n = 0; n < 4; n++) {
+					if(multiMap[n][pointer]) {
+						gcSample.setFill(BASE_COLOR[n]);
+						gcSample.fillText(BASE[n], m - 5, 110 + 10 * n);
+					}
+				}
+				
+				pointer++;
+			}
 		}
 	}
 	
 	private double[][] convertDrawIntensity(double[][] draw, double localMax){
 		for(int m = 0; m < draw[0].length; m++) {
 			for(int n = 0; n < 4; n++) {
-				draw[n][m] = (1 - draw[n][m] / localMax * sampleDrawScale) * sampleCanvasHeight;
+				draw[n][m] = (1 - draw[n][m] / localMax * sampleDrawScale) * sampleCanvasHeight/2;
 			}
 		}
 		
@@ -556,12 +572,13 @@ public class Controller implements Initializable {
 		return drawIntensity;
 	}
 	
-	private void sliderSamplePositionSlide() {
-		sliderSampleValue = (int)Math.round(sliderSamplePosition.getValue());
-		this.DrawSampleWave(sliderSampleValue);
+	private void sliderSamplePositionSlide(int start) {
+//		sliderSampleValue = (int)Math.round(sliderSamplePosition.getValue());
+		sliderSampleValue = start;
 		this.EraseCanvas(gc1);
 		this.DrawDotMap();
 		this.HighlightSelectedDotSequence();
+		this.DrawSampleWave(sliderSampleValue);
 	}
 	
 	private void sliderSampleScaleSlide() {
@@ -673,17 +690,6 @@ public class Controller implements Initializable {
 		taReferenceSequence.setEditable(false);
 		
 		gcSample.setFont(new Font("Arial", 12));
-		gcSample.fillText(gcSample.getFont().getName(), 10, 10);
-		gcSample.setFill(BASE_COLOR[0]);
-		gcSample.fillText("A", 11, 20);
-		gcSample.fillText("A", 21, 20);
-		gcSample.setFill(BASE_COLOR[1]);
-		gcSample.fillText("C", 10, 30);
-		gcSample.fillText("C", 20, 30);
-		gcSample.setFill(BASE_COLOR[2]);
-		gcSample.fillText("G", 10, 40);
-		gcSample.setFill(BASE_COLOR[3]);
-		gcSample.fillText("T", 11, 50);
 
 	}
 }
