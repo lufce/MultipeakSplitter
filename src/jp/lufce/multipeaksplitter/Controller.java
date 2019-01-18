@@ -29,6 +29,8 @@ import javafx.scene.transform.Affine;
 import javafx.stage.FileChooser;
 
 public class Controller implements Initializable {
+	//TODO ReveseComplementにチェックを入れたときの描画とかマウスクリック時の処理を完成させる。
+	
 	
 	final private String CRLF = System.getProperty("line.separator");
 	final private double GRID_LINE_WIDTH = 0.025;
@@ -42,12 +44,19 @@ public class Controller implements Initializable {
 	
 	private Alert alertDialog;
 	
+	//File I/O
+	private File lastChosenFile = null;
+	private FileChooser fileChooser = new FileChooser();
+	//private File sampleFile;
+	//private File referenceFile;
+	
 	private MultipeakDotplot multiDot;
 	private MultipeakDotplot revcomMultiDot;
 	private Ab1Sequence sample;
 	private ReferenceSequence refseq;
 	private int window;
 	private int cutoff;
+	private int threshold;
 	
 	@FXML protected TabPane tabPane1;
 	
@@ -58,17 +67,18 @@ public class Controller implements Initializable {
 	@FXML protected TextArea taReferencePath;
 	@FXML protected TextArea taLog;
 	
-	private File sampleFile;
-	private File referenceFile;
-	
 	@FXML protected Tab tabSequence;
 	@FXML protected TextField tfCutoff;
 	@FXML protected TextField tfWindow;
+	@FXML protected TextField tfThreshold;
 	@FXML protected Button bRemake;
 	@FXML protected Button bResetView;
 	@FXML protected CheckBox checkRevcom;
+	@FXML protected CheckBox checkMaximize;
 	@FXML protected TextArea taSelectedForwardSequence;
 	@FXML protected TextArea taSelectedReverseSequence;
+	@FXML protected TextField tfForwardIntercept;
+	@FXML protected TextField tfReverseIntercept;
 	
 	@FXML protected Canvas cv1;
 	private double CanvasHeight;
@@ -90,7 +100,7 @@ public class Controller implements Initializable {
 	private int sampleWaveEnd;
 	@FXML protected TextArea taReferenceSequence;
 	
-	private int[][] multiIntensity;
+	//private int[][] multiIntensity;
 	private int sampleDrawInterval = 1;
 	private double sampleDrawScale = SAMPLE_SCALE_DEFAULT;
 	
@@ -101,10 +111,7 @@ public class Controller implements Initializable {
 	@FXML protected Label lb_myy;
 	@FXML protected Label lb_ty;
 	
-	private boolean[][] windowedDotmap;
-	private boolean[][] windowedRevcomDotmap;
-	private boolean revcomFlag = false;
-	//TODO revcomFlagを使って条件分岐をし続けると処理が分散して面倒な気がする。一括でできないだろうか？
+	private boolean[][] drawnDotmap;
 	private int dotsize = 1;
 	private double scale = 1.0;
 	
@@ -132,30 +139,38 @@ public class Controller implements Initializable {
 	
 	@FXML
 	protected void bSampleClick(ActionEvent e){
-		FileChooser filechooser = new FileChooser();
-		sampleFile = filechooser.showOpenDialog(null);
-		if(sampleFile != null) {
-			taSamplePath.setText("");
-			taSamplePath.setText(sampleFile.getAbsolutePath());	
+		String filePath = getFilePath();
+		if(filePath != null) {
+			taSamplePath.setText(filePath);
 		}
 	}
 	
 	@FXML
 	protected void bReferenceClick(ActionEvent e) {
-		FileChooser filechooser = new FileChooser();
-		referenceFile = filechooser.showOpenDialog(null);
-		if(referenceFile != null) {
-			taReferencePath.setText("");
-			taReferencePath.setText(referenceFile.getAbsolutePath());	
+		String filePath = getFilePath();
+		if(filePath != null) {
+			taReferencePath.setText(filePath);
 		}
+	}
+	
+	private String getFilePath() {
+		File initialDirectory = lastChosenFile != null ? new File(lastChosenFile.getParent()) : null;
+		fileChooser.setInitialDirectory(initialDirectory);
+		lastChosenFile = fileChooser.showOpenDialog(null);
+		
+		if(lastChosenFile != null) { return lastChosenFile.getAbsolutePath();}
+		else {return null;}
 	}
 	
 //======================== Making dotplot map ================================
 
 	private void updateDotmapScreen(boolean highlighting) {
+		//画面更新の一括処理を行う。
+		
 		this.EraseCanvas(gc1);
 		this.DrawDotMap();
 		
+		//ハイライトが行われているならそれも更新
 		if(highlighting == true) {
 			this.HighlightSelectedDotSequence();
 		}
@@ -163,31 +178,43 @@ public class Controller implements Initializable {
 	
 	@FXML
 	protected void bMakeDotplotClick(ActionEvent e) {
+		//[Make Dotplot]ボタンを押したときの処理。
 		//TODO setValueが例外を投げるようになったら、ちゃんと例外処理する。
+		//TODO Refseq配列の表示方法を変える。
 		
 		taLog.appendText("start making dotplot..." + CRLF);
 		try {
+			
+			//ab1配列オブジェクトとRefSeq配列オブジェクトを生成
 			sample = new Ab1Sequence(new File(taSamplePath.getText()));
 			refseq = new ReferenceSequence(new File(taReferencePath.getText()));
 			
+			//値が適切かどうかを判断する。
 			if(this.setValueOfCutoffWindow() == false) {
 				taLog.appendText("setValue failed"+CRLF);
 				return;
 			}
 			
+			//Dotplot配列を生成
 			sample.makeMultipeak(cutoff);
-			multiDot = new MultipeakDotplot(sample.getMultipeakMap(), refseq.getRefseqMap(), window);
-			revcomMultiDot = new MultipeakDotplot(sample.getRevcomMultipeakMap(), refseq.getRefseqMap(), window);
+			multiDot = new MultipeakDotplot(sample.getMultipeakMap(), refseq.getRefseqMap(), window, threshold);
+			revcomMultiDot = new MultipeakDotplot(sample.getRevcomMultipeakMap(), refseq.getRefseqMap(), window, threshold);
 			
-			windowedDotmap = multiDot.getWindowedDotPlot();
-			windowedRevcomDotmap = revcomMultiDot.getWindowedDotPlot();
+			//Sliding Windowで見やすくしたDotplot配列を生成
+			//windowedDotmap = multiDot.getWindowedDotPlot();
+			//windowedRevcomDotmap = revcomMultiDot.getWindowedDotPlot();
 			
+			
+			
+			//Refseq配列をカラムに入れる。この表示方法は変えたほうがいいのではないか？
 			this.setReferenceSequenceString();
 			taLog.appendText("end making dotplot"+CRLF);
 			
-			multiIntensity = sample.getMultiAllIntensity();
+			//シークエンス解析の波形データの表示
+			//multiIntensity = sample.getMultiAllIntensity();
 			this.DrawSampleWave(0);
 			
+			//波形の拡大縮小用のスライダーの設定
 			sliderSamplePosition.setMax(Math.floor((sample.getTraceLength() - sliderSamplePosition.getWidth()) / sampleDrawInterval));
 			sliderSamplePosition.valueProperty().addListener( (a, b, c) -> this.sliderSamplePositionSlide(c.intValue()) );
 			sliderSamplePosition.setVisible(true);
@@ -197,16 +224,19 @@ public class Controller implements Initializable {
 			tfSampleZoom.setText(String.valueOf(sampleDrawScale));
 			tfSampleZoom.setVisible(true);
 			
+			//ファイル入出力のタブからシークエンス処理のタブに表示を切り替え
 			tabPane1.getSelectionModel().select(tabSequence);
 			
+			//選択された配列の長さを表す変数の初期化（ここで必要？）
 			forwardSequenceLength = 0;
 			reverseSequenceLength = 0;
 			
-
+			//画面の更新
 			this.updateDotmapScreen(false);
 
 		}catch(Exception exception) {
-			taLog.setText(exception.getMessage());
+			taLog.appendText(exception.getMessage());
+			taLog.appendText(exception.getStackTrace().toString());
 		}
 	}
 	
@@ -223,8 +253,8 @@ public class Controller implements Initializable {
 				return;
 			}
 			sample.makeMultipeak(cutoff);
-			multiDot = new MultipeakDotplot(sample.getMultipeakMap(), refseq.getRefseqMap(), window);
-			windowedDotmap = multiDot.getWindowedDotPlot();
+			multiDot = new MultipeakDotplot(sample.getMultipeakMap(), refseq.getRefseqMap(), window, threshold);
+			//windowedDotmap = multiDot.getWindowedDotPlot();
 			this.EraseCanvas(gc1);
 			this.DrawDotMap();
 			taLog.appendText("end remaking dotplot"+CRLF);
@@ -247,6 +277,7 @@ public class Controller implements Initializable {
 		
 		window = Integer.parseInt(tfWindow.getText());
 		cutoff = Integer.parseInt(tfCutoff.getText());
+		threshold = Integer.parseInt(tfThreshold.getText());
 		
 		if(cutoff < 0 || 100 <= cutoff) {
 			taLog.appendText("invalid cutoff value" + CRLF);
@@ -263,9 +294,15 @@ public class Controller implements Initializable {
 			invalid = true;
 		}
 		
+		if(threshold > window) {
+			taLog.appendText("invalid threshold value");
+			invalid = true;
+		}
+		
 		if(invalid == false) {
 			tfWindow.setText(String.valueOf(window));
 			tfCutoff.setText(String.valueOf(cutoff));
+			tfThreshold.setText(String.valueOf(threshold));
 			
 			return true;
 		}else {
@@ -275,7 +312,7 @@ public class Controller implements Initializable {
 	
 	private void EraseCanvas(GraphicsContext gc) {
 		
-		if(revcomFlag && gc.equals(gc1)) {
+		if(this.checkRevcom.isSelected() && gc.equals(gc1)) {
 			gc.setFill(Color.BLACK);
 		}else {
 			gc.setFill(Color.WHITE);
@@ -288,8 +325,6 @@ public class Controller implements Initializable {
 	private void DrawDotMap() {
 //		scaled_dotsize = aff.getMxx()*dotsize;
 		
-		boolean[][] map;
-		
 		gc1.setLineWidth(GRID_LINE_WIDTH);
 		gc1.setTransform(aff);
 		
@@ -301,19 +336,27 @@ public class Controller implements Initializable {
 		
 		
 		//Draw dot as filled rectangles.
-		if(revcomFlag) {
+		if(this.checkRevcom.isSelected() && this.checkMaximize.isSelected()) {
 			gc1.setFill(Color.WHITE);
 			gc1.setStroke(Color.WHITE);
-			map = windowedRevcomDotmap;
-		}else {
+			drawnDotmap = this.revcomMultiDot.getMaxWindowedDotPlot();
+		}else if(this.checkRevcom.isSelected() && !this.checkMaximize.isSelected()) {
+			gc1.setFill(Color.WHITE);
+			gc1.setStroke(Color.WHITE);
+			drawnDotmap = this.revcomMultiDot.getWindowedDotPlot();
+		}else if(!this.checkRevcom.isSelected() && this.checkMaximize.isSelected()) {
 			gc1.setFill(Color.BLACK);
 			gc1.setStroke(Color.BLACK);
-			map = windowedDotmap;
+			drawnDotmap = this.multiDot.getMaxWindowedDotPlot();
+		}else if(!this.checkRevcom.isSelected() && !this.checkMaximize.isSelected()) {
+			gc1.setFill(Color.BLACK);
+			gc1.setStroke(Color.BLACK);
+			drawnDotmap = this.multiDot.getWindowedDotPlot();
 		}
 		
-		for(int m = 0; m < map.length; m++) {
-			for(int n = 0; n < map[0].length; n++) {
-				if(map[m][n]) {
+		for(int m = 0; m < drawnDotmap.length; m++) {
+			for(int n = 0; n < drawnDotmap[0].length; n++) {
+				if(drawnDotmap[m][n]) {
 					//gc.fillRect(m*scaled_dotsize, n*scaled_dotsize, scaled_dotsize, scaled_dotsize);
 					gc1.fillRect(m*dotsize, n*dotsize, dotsize, dotsize);
 				}
@@ -321,12 +364,12 @@ public class Controller implements Initializable {
 		}
 		
 		//Draw lines for grids.
-		for(int m = 1; m < map.length ; m++) {
-			gc1.strokeLine(m*dotsize, 0, m*dotsize, map[0].length * dotsize);
+		for(int m = 1; m < drawnDotmap.length ; m++) {
+			gc1.strokeLine(m*dotsize, 0, m*dotsize, drawnDotmap[0].length * dotsize);
 		}
 		
-		for(int n = 1; n < map[0].length; n++) {
-			gc1.strokeLine(0, n*dotsize, map.length * dotsize, n*dotsize);
+		for(int n = 1; n < drawnDotmap[0].length; n++) {
+			gc1.strokeLine(0, n*dotsize, drawnDotmap.length * dotsize, n*dotsize);
 		}
 		
 		DrawAffine(aff);
@@ -423,6 +466,9 @@ public class Controller implements Initializable {
 				
 				taSelectedForwardSequence.setText(refseq.getSeqSubstring(forwardStartPoint[1], forwardSequenceLength));
 				taSelectedReverseSequence.setText(refseq.getSeqSubstring(reverseStartPoint[1], reverseSequenceLength));
+				
+				tfForwardIntercept.setText(Integer.toString(DotY - DotX));
+				tfReverseIntercept.setText(Integer.toString(DotY + DotX));
 			}
 		}else {
 			drag = false;
@@ -436,8 +482,8 @@ public class Controller implements Initializable {
 		int X = DotX - 1;
 		int Y = DotY - 1;
 		
-		if(X >= 0 && X < windowedDotmap.length && Y >= 0 && Y < windowedDotmap[0].length && windowedDotmap[X][Y]) {
-			while(X >= 0 && X < windowedDotmap.length && Y >= 0 && Y < windowedDotmap[0].length && windowedDotmap[X][Y] ) {
+		if(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y]) {
+			while(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y] ) {
 				forwardSequenceLength++;
 				X--;
 				Y--;
@@ -449,7 +495,7 @@ public class Controller implements Initializable {
 			X = DotX;
 			Y = DotY;
 			
-			while(X >= 0 && X < windowedDotmap.length && Y >= 0 && Y < windowedDotmap[0].length && windowedDotmap[X][Y]) {
+			while(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y]) {
 				forwardSequenceLength++;
 				X++;
 				Y++;
@@ -458,7 +504,7 @@ public class Controller implements Initializable {
 			X = DotX - 1;
 			Y = DotY - 1;
 			
-			while(X >= 0 && X < windowedDotmap.length && Y >= 0 && Y < windowedDotmap[0].length && windowedDotmap[X][Y]) {
+			while(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y]) {
 				reverseSequenceLength++;
 				X++;
 				Y--;
@@ -470,7 +516,7 @@ public class Controller implements Initializable {
 			X = DotX - 2;
 			Y = DotY;
 			
-			while(X >= 0 && X < windowedDotmap.length && Y >= 0 && Y < windowedDotmap[0].length && windowedDotmap[X][Y]) {
+			while(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y]) {
 				reverseSequenceLength++;
 				X--;
 				Y++;
@@ -499,13 +545,12 @@ public class Controller implements Initializable {
 		sampleWaveStart = start;
 		sampleWaveEnd = sampleWaveStart + sampleCanvasWidth * sampleDrawInterval;
 		
-		double[][] drawIntensity = this.getDrawIntensity(sampleWaveStart);
-		double localMax = this.getMaxIntensity(drawIntensity);
+		//double[][] drawIntensity = this.getDrawIntensity(sampleWaveStart);
+		double localMax = sample.getLocalMaxIntensity(sampleWaveStart, sampleWaveEnd);
 		boolean[][] multiMap = sample.getMultipeakMap();
 		int[] basecall = sample.getBasecalls();
 		int pointer = sampleDrawedBaseStart;
-		
-		drawIntensity = this.convertDrawIntensity(drawIntensity, localMax);
+		double[][] drawIntensity = this.convertDrawIntensity(sample.getSubarrayMultiAllIntensity(sampleWaveStart, sampleWaveEnd), localMax);
 		
 		this.EraseCanvas(gcSample);
 		
@@ -530,51 +575,53 @@ public class Controller implements Initializable {
 		}
 	}
 	
-	private double[][] convertDrawIntensity(double[][] draw, double localMax){
-		for(int m = 0; m < draw[0].length; m++) {
+	private double[][] convertDrawIntensity(int[][] intensity, double localMax){
+		double[][] converted = new double[intensity.length][intensity[1].length];
+		
+		for(int m = 0; m < intensity[0].length; m++) {
 			for(int n = 0; n < 4; n++) {
-				draw[n][m] = (1 - draw[n][m] / localMax * sampleDrawScale) * sampleCanvasHeight/2;
+				converted[n][m] = (1 - intensity[n][m] / localMax * sampleDrawScale) * sampleCanvasHeight/2;
 			}
 		}
 		
-		return draw;
+		return converted;
 	}
 	
-	private double getMaxIntensity(double[][] multi) {
-		double localMax = Double.MIN_VALUE;
-		
-		for(int m = 0; m < multi[0].length; m++) {
-			for(int n = 0; n < 4; n++) {
-				if(multi[n][m] > localMax) {
-					localMax = multi[n][m];
-				}
-			}
-		}
-		
-		return localMax;
-	}
+//	private double getMaxIntensity(double[][] multi) {
+//		double localMax = Double.MIN_VALUE;
+//		
+//		for(int m = 0; m < multi[0].length; m++) {
+//			for(int n = 0; n < 4; n++) {
+//				if(multi[n][m] > localMax) {
+//					localMax = multi[n][m];
+//				}
+//			}
+//		}
+//		
+//		return localMax;
+//	}
 	
-	private double[][] getDrawIntensity(int start) throws ArrayIndexOutOfBoundsException {
-
-		if(sampleWaveEnd > multiIntensity[0].length) {
-			System.out.println("out of bounds");
-			throw new ArrayIndexOutOfBoundsException();
-		}
-		
-		double[][] drawIntensity = new double[4][sampleCanvasWidth];
-		
-		for(int m = start; m < start + sampleCanvasWidth ; m++) {
-			for(int n = 0; n < 4; n++) {
-				drawIntensity[n][m-start] = multiIntensity[n][m * sampleDrawInterval];
-			}
-		}
-		
-		return drawIntensity;
-	}
+//	private double[][] getDrawIntensity(int start) throws ArrayIndexOutOfBoundsException {
+//
+//		if(sampleWaveEnd > multiIntensity[0].length) {
+//			System.out.println("out of bounds");
+//			throw new ArrayIndexOutOfBoundsException();
+//		}
+//		
+//		double[][] drawIntensity = new double[4][sampleCanvasWidth];
+//		
+//		for(int m = start; m < start + sampleCanvasWidth ; m++) {
+//			for(int n = 0; n < 4; n++) {
+//				drawIntensity[n][m-start] = multiIntensity[n][m * sampleDrawInterval];
+//			}
+//		}
+//		
+//		return drawIntensity;
+//	}
 	
 	private void sliderSamplePositionSlide(int start) {
-//		sliderSampleValue = (int)Math.round(sliderSamplePosition.getValue());
-		sliderSampleValue = start;
+		sliderSampleValue = (int)Math.round(sliderSamplePosition.getValue());
+//		sliderSampleValue = start;
 		this.EraseCanvas(gc1);
 		this.DrawDotMap();
 		this.HighlightSelectedDotSequence();
@@ -644,7 +691,6 @@ public class Controller implements Initializable {
 	
 	@FXML
 	protected void checkRevcomClick() {
-		revcomFlag = checkRevcom.isSelected();
 		this.EraseCanvas(gc1);
 		this.DrawDotMap();
 	}

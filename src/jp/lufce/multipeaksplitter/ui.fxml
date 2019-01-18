@@ -8,7 +8,7 @@
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="750.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jp.lufce.multipeaksplitter.Controller">
    <children>
       <Canvas fx:id="cv1" height="500.0" layoutX="386.0" layoutY="228.0" onMouseClicked="#cv1MouseClicked" onMouseDragged="#cv1MouseDragged" onMouseMoved="#cv1MouseMoved" onMousePressed="#cv1MousePressed" onScroll="#cv1Scroll" width="600.0" />
-      <TabPane fx:id="tabPane1" layoutX="14.0" layoutY="14.0" prefHeight="600.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
+      <TabPane fx:id="tabPane1" layoutX="14.0" layoutY="14.0" prefHeight="713.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
         <tabs>
           <Tab fx:id="tabFile" text="FIle">
             <content>
@@ -32,19 +32,26 @@
           </Tab>
           <Tab fx:id="tabSequence" text="Sequence">
             <content>
-              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="627.0" prefWidth="200.0">
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="643.0" prefWidth="200.0">
                      <children>
-                        <Label layoutX="14.0" layoutY="14.0" text="Cutoff (%)" />
-                        <Label layoutX="86.0" layoutY="14.0" text="Window Size" />
-                        <TextField fx:id="tfCutoff" layoutX="12.0" layoutY="31.0" prefHeight="25.0" prefWidth="58.0" text="10" />
-                        <TextField fx:id="tfWindow" layoutX="86.0" layoutY="31.0" prefHeight="25.0" prefWidth="58.0" text="7" />
-                        <Button fx:id="bRemake" layoutX="12.0" layoutY="66.0" mnemonicParsing="false" onAction="#bRemakeClick" text="Remake Dotplot" />
-                        <Label layoutX="13.0" layoutY="177.0" text="Selected Foward Sequence" />
-                        <TextArea fx:id="taSelectedForwardSequence" layoutX="8.0" layoutY="194.0" prefHeight="160.0" prefWidth="185.0" wrapText="true" />
-                        <Button fx:id="bResetView" layoutX="13.0" layoutY="97.0" mnemonicParsing="false" onAction="#bResetViewClick" text="Resete View" />
-                        <TextArea fx:id="taSelectedReverseSequence" layoutX="8.0" layoutY="387.0" prefHeight="160.0" prefWidth="185.0" wrapText="true" />
-                        <Label layoutX="13.0" layoutY="370.0" text="Selected Reverse Sequence" />
-                        <CheckBox fx:id="checkRevcom" layoutX="17.0" layoutY="135.0" mnemonicParsing="false" onMouseClicked="#checkRevcomClick" text="Reverse Complement" />
+                        <Label layoutX="15.0" layoutY="10.0" text="Cutoff (%)" />
+                        <Label layoutX="11.0" layoutY="62.0" text="Window Size" />
+                        <TextField fx:id="tfCutoff" layoutX="13.0" layoutY="27.0" prefHeight="25.0" prefWidth="58.0" text="10" />
+                        <TextField fx:id="tfWindow" layoutX="16.0" layoutY="79.0" prefHeight="25.0" prefWidth="58.0" text="15" />
+                        <Button fx:id="bRemake" layoutX="11.0" layoutY="111.0" mnemonicParsing="false" onAction="#bRemakeClick" text="Remake Dotplot" />
+                        <Label layoutX="13.0" layoutY="216.0" text="Selected Forward Sequence" />
+                        <TextArea fx:id="taSelectedForwardSequence" layoutX="8.0" layoutY="233.0" prefHeight="160.0" prefWidth="185.0" wrapText="true" />
+                        <Button fx:id="bResetView" layoutX="12.0" layoutY="142.0" mnemonicParsing="false" onAction="#bResetViewClick" text="Resete View" />
+                        <TextArea fx:id="taSelectedReverseSequence" layoutX="8.0" layoutY="468.0" prefHeight="160.0" prefWidth="185.0" wrapText="true" />
+                        <Label layoutX="13.0" layoutY="451.0" text="Selected Reverse Sequence" />
+                        <CheckBox fx:id="checkRevcom" layoutX="13.0" layoutY="173.0" mnemonicParsing="false" onMouseClicked="#checkRevcomClick" text="Reverse Complement" />
+                        <Label layoutX="12.0" layoutY="393.0" text="Y-intercept" />
+                        <Label layoutX="12.0" layoutY="628.0" text="Y-intercept" />
+                        <TextField fx:id="tfForwardIntercept" layoutX="10.0" layoutY="410.0" prefHeight="25.0" prefWidth="86.0" />
+                        <TextField fx:id="tfReverseIntercept" layoutX="10.0" layoutY="645.0" prefHeight="25.0" prefWidth="86.0" />
+                        <TextField fx:id="tfThreshold" layoutX="101.0" layoutY="79.0" prefHeight="25.0" prefWidth="58.0" text="13" />
+                        <Label layoutX="96.0" layoutY="62.0" text="Threshold Size" />
+                        <CheckBox fx:id="checkMaximize" layoutX="13.0" layoutY="190.0" mnemonicParsing="false" onMouseClicked="#checkRevcomClick" prefHeight="17.0" prefWidth="157.0" text="Maximize line length" />
                      </children></AnchorPane>
             </content>
           </Tab>

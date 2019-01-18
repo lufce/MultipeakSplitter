@@ -91,6 +91,51 @@ public class Ab1Sequence extends ABITrace {
 	public int[][] getRevcomMultiAllIntensity(){
 		return revcomMultiAllIntensity;
 	}
+	
+	public double getLocalMaxIntensity(int start, int end) {
+		double localMax = Double.MIN_VALUE;
+		
+		for(int m = start; m < end; m++) {
+			for(int n = 0; n < 4; n++) {
+				if(multiAllIntensity[n][m] > localMax) {
+					localMax = multiAllIntensity[n][m];
+				}
+			}
+		}
+		return localMax;
+	}
+	
+	public int[][] getSubarrayMultiAllIntensity(int start, int end) throws ArrayIndexOutOfBoundsException{
+		if(start < 0 || this.multiAllIntensity[1].length < end) {
+			System.out.println("out of bounds");
+			throw new ArrayIndexOutOfBoundsException();
+		}
+		
+		int[][] subarray = new int[4][end-start+1];
+		
+		for(int m = 0; m < subarray[1].length; m++) {
+			for(int n = 0; n < 4; n++) {
+				subarray[n][m] = this.multiAllIntensity[n][m+start];
+			}
+		}
+		return subarray;
+	}
+	
+	public int[][] getSubarrayMultiBasecallIntensity(int start, int end) throws ArrayIndexOutOfBoundsException{
+		if(start < 0 || this.multiBasecallIntensity[1].length < end) {
+			System.out.println("out of bounds");
+			throw new ArrayIndexOutOfBoundsException();
+		}
+		
+		int[][] subarray = new int[4][end-start+1];
+		
+		for(int m = 0; m < subarray[1].length; m++) {
+			for(int n = 0; n < 4; n++) {
+				subarray[n][m] = this.multiBasecallIntensity[n][m];
+			}
+		}
+		return subarray;
+	}
 		
 	private void getAllTrace() {
 		//各塩基ごとのベースコール座標でのトレースデータを含んだ二次元配列を返す
