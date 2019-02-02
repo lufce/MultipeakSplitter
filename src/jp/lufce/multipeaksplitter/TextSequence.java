@@ -11,14 +11,21 @@ import org.biojavax.bio.seq.RichSequence;
 import org.biojavax.bio.seq.io.FastaFormat;
 import org.biojavax.bio.seq.io.SimpleRichSequenceBuilder;
 
-public class ReferenceSequence {
+public class TextSequence {
+
+	//TODO 今はFASTAファイルしか対応していないが、Plainテキストとかマルチピークのテキスト出力ファイルとかを読み込めるようにしたい。
 
 	private File f;
 	FastaFormat format = new FastaFormat();
 	private Sequence seq;
-	private boolean[][] refseq;
-	
-	public ReferenceSequence(File file){
+	private boolean[][] map;
+
+	final static private int A = 0;
+	final static private int C = 1;
+	final static private int G = 2;
+	final static private int T = 3;
+
+	public TextSequence(File file){
 		f = file;
 		try {
 			this.makeSequence();
@@ -30,15 +37,15 @@ public class ReferenceSequence {
 			e.printStackTrace();
 		}
 	}
-	
-	public boolean[][] getRefseqMap(){
+
+	public boolean[][] getMap(){
 		if(seq != null) {
-			return refseq;
+			return map;
 		}else {
 			return null;
 		}
 	}
-	
+
 	public String getSeqString(){
 		if(seq != null) {
 			return seq.seqString();
@@ -46,7 +53,7 @@ public class ReferenceSequence {
 			return "";
 		}
 	}
-	
+
 	public int getSequenceLength() {
 		if(seq != null) {
 			return seq.seqString().length();
@@ -54,7 +61,7 @@ public class ReferenceSequence {
 			return 0;
 		}
 	}
-	
+
 	public String getSeqSubstring(int start, int length) {
 		if(length > 0 && start > 0 && start < seq.seqString().length()) {
 			return seq.subStr(start, start + length -1);
@@ -62,52 +69,64 @@ public class ReferenceSequence {
 			return "";
 		}
 	}
-	
+
 	public boolean canRead() throws IOException {
 		//ファイルがfasta形式か調べる。
-		
+
 		if(format.canRead(f)) {
 			return true;
 		}else {
 			return false;
 		}
 	}
-	
+
 	private void makeSequence() throws IOException, BioException {
 		//Sequence形式の塩基配列と、boolean配列形式の塩基配列を作成する。
-		
+
 		if(this.canRead() == false) return;
-		
+
 		SimpleRichSequenceBuilder builder = new SimpleRichSequenceBuilder();
 		format.readSequence(new BufferedReader(new FileReader(f.getAbsolutePath())), RichSequence.IOTools.getDNAParser(), builder);
 		seq = builder.makeSequence();
-		refseq = refseq2Boolean(seq.seqString());
-		
+
 		return;
 	}
-	
-	private static boolean[][] refseq2Boolean(String refseqString){
 
-		boolean[][] boo = new boolean[4][refseqString.length()];
+	public void makeMap() {
+		map = seqString2Boolean(seq.seqString());
+	}
+
+	private static boolean[][] seqString2Boolean(String seqString){
+
+		boolean[][] boo = new boolean[4][seqString.length()];
 		char base;
-		
-		//初期化
-		for(int n=0; n< refseqString.length(); n++) {
-			boo[0][n] = false;
-			boo[1][n] = false;
-			boo[2][n] = false;
-			boo[3][n] = false;
-		}
-		
+
 		//塩基配列をbooleanの二次元配列に変換
-		for(int n=0; n< refseqString.length(); n++) {
-			base = refseqString.charAt(n);
-			if(base == 'A' || base == 'a') {boo[0][n] = true;}
-			else if(base == 'C' || base == 'c') {boo[1][n] = true;}
-			else if(base == 'G' || base == 'g') {boo[2][n] = true;}
-			else if(base == 'T' || base == 't') {boo[3][n] = true;}
+		for(int n=0; n< seqString.length(); n++) {
+			base = seqString.charAt(n);
+
+			switch(base) {
+			case 'A':
+			case 'a':
+				boo[A][n] = true;break;
+			case 'C':
+			case 'c':
+				boo[C][n] = true;break;
+			case 'G':
+			case 'g':
+				boo[G][n] = true;break;
+			case 'T':
+			case 't':
+				boo[T][n] = true;break;
+			case 'N':
+			case 'n':
+				for(int i = 0; i < 4; i++) {
+					boo[i][n] = true;
+				}
+				break;
+			}
 		}
-		
+
 		return boo;
 	}
 }

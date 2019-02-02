@@ -10,14 +10,14 @@ public class MultipeakDotplot {
 	
 //========================initialization======================================
 	
-	public MultipeakDotplot(boolean[][] sampleMap, boolean[][] refseqMap, int windowSize, int thresholdSize){
+	public MultipeakDotplot(boolean[][] map1, boolean[][] map2, int windowSize, int thresholdSize){
 		//TODO 例外を返すようにしないといけない。
 
-		if(0 < windowSize && windowSize < sampleMap[0].length && windowSize < refseqMap[0].length ) {
+		if(0 < windowSize && windowSize < map1[0].length && windowSize < map2[0].length ) {
 			window = windowSize;
-			rawDotplot = booleanDotplot(sampleMap, refseqMap);
+			rawDotplot = booleanDotplot(map1, map2);
 			windowedDotplot = this.windowDotplot(rawDotplot, windowSize, thresholdSize);
-			maxWindowedDotplot = this.maximizeWindowdDotplot(sampleMap, refseqMap, windowedDotplot);
+			maxWindowedDotplot = this.maximizeWindowdDotplot(map1, map2, windowedDotplot);
 		}		
 	}
 	
