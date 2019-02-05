@@ -8,8 +8,8 @@ import org.biojava.bio.seq.DNATools;
 
 public class Ab1Sequence extends ABITrace {
 
-	private boolean[][] multi;
-	private boolean[][] revcomMulti;
+	private boolean[][] map;
+	private boolean[][] revcomMap;
 	private int[][] multiBasecallIntensity;
 	private int[][] multiAllIntensity;
 	private int[][] revcomMultiBasecallIntensity;
@@ -38,8 +38,8 @@ public class Ab1Sequence extends ABITrace {
 		}
 
 		this.getAllTrace();
-		multi = new boolean[4][super.getSequenceLength()];
-		revcomMulti = new boolean[4][super.getSequenceLength()];
+		map = new boolean[4][super.getSequenceLength()];
+		revcomMap = new boolean[4][super.getSequenceLength()];
 
 		int maxpeak = 0;
 
@@ -55,11 +55,11 @@ public class Ab1Sequence extends ABITrace {
 			//Multi peakの検出
 			for(int n = 0; n<4; n++){
 				if(maxpeak != 0 && (double)multiBasecallIntensity[n][m]/maxpeak >= (double)cutoff/100){
-					multi[n][m]= true;
-					revcomMulti[3-n][multiBasecallIntensity[0].length -1 -m] = true;
+					map[n][m]= true;
+					revcomMap[3-n][multiBasecallIntensity[0].length -1 -m] = true;
 				}else{
-					multi[n][m]= false;
-					revcomMulti[3-n][multiBasecallIntensity[0].length -1 -m] = false;
+					map[n][m]= false;
+					revcomMap[3-n][multiBasecallIntensity[0].length -1 -m] = false;
 				}
 			}
 
@@ -68,12 +68,12 @@ public class Ab1Sequence extends ABITrace {
 		}
 	}
 
-	public boolean[][] getMultipeakMap(){
-		return multi;
+	public boolean[][] getMap(){
+		return map;
 	}
 
-	public boolean[][] getRevcomMultipeakMap(){
-		return revcomMulti;
+	public boolean[][] getRevcomMap(){
+		return revcomMap;
 	}
 
 	public int[][] getMultiBasecallIntensity(){
@@ -168,6 +168,10 @@ public class Ab1Sequence extends ABITrace {
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public int getSequenceLength() {
+		return super.getSequenceLength();
 	}
 
 }

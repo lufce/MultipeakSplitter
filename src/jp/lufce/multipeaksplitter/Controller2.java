@@ -34,12 +34,12 @@ public class Controller2 implements Initializable {
 
 	final private String CRLF = System.getProperty("line.separator");
 	final private double GRID_LINE_WIDTH = 0.025;
-	final private double SAMPLE_SCALE_MAX = 20;
-	final private double SAMPLE_SCALE_MIN = 0.2;
-	final private double SAMPLE_SCALE_DEFAULT = 1;
-	final private double SAMPLE_WAVELINE_WIDTH = 0.5;
-	final private Color[] BASE_COLOR = {Color.RED, Color.GREEN, Color.ORANGE, Color.BLACK};
-	final private String[] BASE = {"A","C","G","T"};
+	final private double WAVE_SCALE_MAX = 20;
+	final private double WAVE_SCALE_MIN = 0.2;
+	final private double WAVE_SCALE_DEFAULT = 1;
+//	final private double WAVELINE_WIDTH = 0.5;
+//	final private Color[] BASE_COLOR = {Color.RED, Color.GREEN, Color.ORANGE, Color.BLACK};
+//	final private String[] BASE = {"A","C","G","T"};
 	// The index 0 to 3 associates with A, C, G, and T, respectively.
 
 	private Alert alertDialog;
@@ -50,10 +50,17 @@ public class Controller2 implements Initializable {
 	//private File sampleFile;
 	//private File referenceFile;
 
-	private MultipeakDotplot dotplot;
+	private MultipeakDotplot[] dotplot = new MultipeakDotplot[4];
+	/* Index   Top     Left
+	 * 0:      -       -
+	 * 1:      Revcom  -
+	 * 2:      -       Revcom
+	 * 3:      Revcom  Revcom
+	 */
+
 	private MultipeakDotplot dotplotRevCom;
 	private Ab1Sequence sample;
-	private TextSequence refseq;
+	private FastaSequence refseq;
 
 	final private int typeUndef = 0;
 	final private int typeFasta = 1;
@@ -82,7 +89,8 @@ public class Controller2 implements Initializable {
 	@FXML protected TextField tfThreshold;
 	@FXML protected Button bRemake;
 	@FXML protected Button bResetView;
-	@FXML protected CheckBox checkRevcom;
+	@FXML protected CheckBox checkTopRevcom;
+	@FXML protected CheckBox checkLeftRevcom;
 	@FXML protected CheckBox checkMaximize;
 	@FXML protected TextArea taSelectedForwardSequence;
 	@FXML protected TextArea taSelectedReverseSequence;
@@ -111,11 +119,20 @@ public class Controller2 implements Initializable {
 	private int topWaveStart;
 	private int topWaveEnd;
 
+	private GraphicsContext gcLeft;
+	private int cvLeftHeight;
+	private int cvLeftWidth;
+	private int leftDrawedBaseStart = 0;
+	private int leftDrawedBaseEnd = 0;
+	private int leftWaveStart;
+	private int leftWaveEnd;
+
 	//private int[][] multiIntensity;
 	private int topDrawInterval = 1;
-	private double topDrawScale = SAMPLE_SCALE_DEFAULT;
+	private double topDrawScale = WAVE_SCALE_DEFAULT;
+	private double leftDrawScale = WAVE_SCALE_DEFAULT;
 
-	private boolean[][] drawnDotmap;
+	private boolean[][] drawnDotplot;
 	private int dotsize = 1;
 	private double scale = 1.0;
 
@@ -171,8 +188,8 @@ public class Controller2 implements Initializable {
 	private void updateDotmapScreen(boolean highlighting) {
 		//画面更新の一括処理を行う。
 
-		this.EraseCanvas(gcMap);
-		this.DrawDotMap();
+		this.clearCanvas(gcMap);
+		this.drawDotplot();
 
 		//ハイライトが行われているならそれも更新
 		if(highlighting == true) {
@@ -195,7 +212,7 @@ public class Controller2 implements Initializable {
 			//refseq = new TextSequence(new File(taLeftPath.getText()));
 
 			//TODO SequenceMasterを使ってみる
-			seqTop = new SequenceMaster(new File(taTopPath.getText()));
+			seqTop  = new SequenceMaster(new File(taTopPath.getText()));
 			seqLeft = new SequenceMaster(new File(taLeftPath.getText()));
 
 			//値が適切かどうかを判断し、代入する。
@@ -204,34 +221,8 @@ public class Controller2 implements Initializable {
 				return;
 			}
 
-			//それぞれのseqについてmapを生成する
-			switch(seqTop.getDataType()) {
-			case typeFasta:
-				seqTop.textSeq.makeMap();break;
-			case typeAb1:
-				seqTop.ab1Seq.makeMap(topCutoff);break;
-			default:
-				taLog.appendText("the Datatype of top-sequence is invalid. Datatype:"+String.valueOf(seqTop.getDataType()));
-			}
-
-			switch(seqLeft.getDataType()) {
-			case typeFasta:
-				seqLeft.textSeq.makeMap();break;
-			case typeAb1:
-				seqLeft.ab1Seq.makeMap(leftCutoff);break;
-			default:
-				taLog.appendText("the Datatype of left-sequence is invalid. Datatype:"+String.valueOf(seqLeft.getDataType()));
-			}
-
-			//Dotplot配列を生成
-			dotplot = new MultipeakDotplot(sample.getMultipeakMap(), refseq.getMap(), window, threshold);
-			dotplotRevCom = new MultipeakDotplot(sample.getRevcomMultipeakMap(), refseq.getMap(), window, threshold);
-
-			//Sliding Windowで見やすくしたDotplot配列を生成
-			//windowedDotmap = multiDot.getWindowedDotPlot();
-			//windowedRevcomDotmap = revcomMultiDot.getWindowedDotPlot();
-
-
+			makeMaps();
+			makeDotplots();
 
 			//Refseq配列をカラムに入れる。この表示方法は変えたほうがいいのではないか？
 			this.setReferenceSequenceString();
@@ -239,7 +230,7 @@ public class Controller2 implements Initializable {
 
 			//シークエンス解析の波形データの表示
 			//multiIntensity = sample.getMultiAllIntensity();
-			this.DrawSampleWave(0);
+			this.drawSeqCanvas(0,gcTop);
 
 			//波形の拡大縮小用のスライダーの設定
 			sliderTopPosition.setMax(Math.floor((sample.getTraceLength() - sliderTopPosition.getWidth()) / topDrawInterval));
@@ -270,6 +261,7 @@ public class Controller2 implements Initializable {
 	@FXML
 	protected void bRemakeClick(ActionEvent e) {
 		//TODO setValueが例外を投げるようになったら、ちゃんと例外処理する。
+		//Remakeボタンはファイルの再読込はしない。
 
 		if (dotplot == null) {
 			taLog.appendText("Remake failed" + CRLF);
@@ -279,22 +271,54 @@ public class Controller2 implements Initializable {
 				taLog.appendText("setValue failed" + CRLF);
 				return;
 			}
-			sample.makeMap(topCutoff);
-			dotplot = new MultipeakDotplot(sample.getMultipeakMap(), refseq.getMap(), window, threshold);
+			makeMaps();
+			makeDotplots();
 			//windowedDotmap = multiDot.getWindowedDotPlot();
-			this.EraseCanvas(gcMap);
-			this.DrawDotMap();
+			this.clearCanvas(gcMap);
+			this.drawDotplot();
 			taLog.appendText("end remaking dotplot"+CRLF);
-			this.DrawSampleWave(topWaveStart);
+			this.drawSeqCanvas(topWaveStart,gcTop);
 			tabPane1.getSelectionModel().select(tabSequence);
 		}
+	}
+
+	private void makeMaps() {
+		//それぞれのseqについてmapを生成する
+		switch(seqTop.getDataType()) {
+		case typeFasta:
+			seqTop.fastaSeq.makeMap();break;
+		case typeAb1:
+			seqTop.ab1Seq.makeMap(topCutoff);break;
+		default:
+			taLog.appendText("The datatype of top-sequence is invalid. Datatype:"+String.valueOf(seqTop.getDataType()));
+		}
+
+		switch(seqLeft.getDataType()) {
+		case typeFasta:
+			seqLeft.fastaSeq.makeMap();break;
+		case typeAb1:
+			seqLeft.ab1Seq.makeMap(leftCutoff);break;
+		default:
+			taLog.appendText("The datatype of left-sequence is invalid. Datatype:"+String.valueOf(seqLeft.getDataType()));
+		}
+
+		return;
+	}
+
+	private void makeDotplots() {
+		//Dotplot配列を生成
+		//TODO ここでそれぞれの配列の逆相補鎖を含めた４種類のdotplotを作る？
+		dotplot[0] = new MultipeakDotplot(seqTop.getMap(),       seqLeft.getMap(),       window, threshold);
+		dotplot[1] = new MultipeakDotplot(seqTop.getRevcomMap(), seqLeft.getMap(),       window, threshold);
+		dotplot[2] = new MultipeakDotplot(seqTop.getMap(),       seqLeft.getRevcomMap(), window, threshold);
+		dotplot[3] = new MultipeakDotplot(seqTop.getRevcomMap(), seqLeft.getRevcomMap(), window, threshold);
 	}
 
 	@FXML
 	protected void bResetViewClick() {
 		aff = IDENTITY_TRANSFORM.clone();
-		this.EraseCanvas(gcMap);
-		this.DrawDotMap();
+		this.clearCanvas(gcMap);
+		this.drawDotplot();
 	}
 
 	private boolean setValueOfCutoffWindow() {
@@ -374,53 +398,64 @@ public class Controller2 implements Initializable {
 		}
 	}
 
-	private void EraseCanvas(GraphicsContext gc) {
+	private void clearCanvas(GraphicsContext gc) {
 
-		if(this.checkRevcom.isSelected() && gc.equals(gcMap)) {
-			gc.setFill(Color.BLACK);
-		}else {
-			gc.setFill(Color.WHITE);
-		}
+		gc.setFill(Color.WHITE);
+
+//		Revcomのときに色を変えるかどうか。
+//		if(this.checkRevcom.isSelected() && gc.equals(gcMap)) {
+//			gc.setFill(Color.BLACK);
+//		}else {
+//			gc.setFill(Color.WHITE);
+//		}
 
 		gc.setTransform(IDENTITY_TRANSFORM);
 		gc.fillRect(0, 0, cvMapWidth, cvMapHeight);
 	}
 
-	private void DrawDotMap() {
-//		scaled_dotsize = aff.getMxx()*dotsize;
+	private void drawDotplot() {
 
 		gcMap.setLineWidth(GRID_LINE_WIDTH);
 		gcMap.setTransform(aff);
 
-		//Highlight sample wave range
-		this.calculateRangeOfDrawedBase(sample.getBasecalls(), topWaveStart ,topWaveEnd);
-
+		//seqTopのCanvasで表示されている部分に当たるMap部分を黄色でハイライトする。
+		//TODO seqLeftに対してもこの操作を行わないといけない。
+		//TODO seqがAb1形式じゃない場合どうする？
+		this.calculateRangeOfDrawedBase(seqTop.ab1Seq.getBasecalls(), topWaveStart ,topWaveEnd);
 		gcMap.setFill(Color.YELLOW);
-		gcMap.fillRect(topDrawedBaseStart, 0, (topDrawedBaseEnd - topDrawedBaseStart + 1)*dotsize, refseq.getSequenceLength()*dotsize);
+		gcMap.fillRect(topDrawedBaseStart, 0, (topDrawedBaseEnd - topDrawedBaseStart + 1)*dotsize, seqLeft.getSequenceLength()*dotsize);
 
 
-		//Draw dot as filled rectangles.
-		if(this.checkRevcom.isSelected() && this.checkMaximize.isSelected()) {
-			gcMap.setFill(Color.WHITE);
-			gcMap.setStroke(Color.WHITE);
-			drawnDotmap = this.dotplotRevCom.getMaxWindowedDotPlot();
-		}else if(this.checkRevcom.isSelected() && !this.checkMaximize.isSelected()) {
-			gcMap.setFill(Color.WHITE);
-			gcMap.setStroke(Color.WHITE);
-			drawnDotmap = this.dotplotRevCom.getWindowedDotPlot();
-		}else if(!this.checkRevcom.isSelected() && this.checkMaximize.isSelected()) {
-			gcMap.setFill(Color.BLACK);
-			gcMap.setStroke(Color.BLACK);
-			drawnDotmap = this.dotplot.getMaxWindowedDotPlot();
-		}else if(!this.checkRevcom.isSelected() && !this.checkMaximize.isSelected()) {
-			gcMap.setFill(Color.BLACK);
-			gcMap.setStroke(Color.BLACK);
-			drawnDotmap = this.dotplot.getWindowedDotPlot();
-		}
+		//ドットを描画していく
+		gcMap.setFill(Color.BLACK);
+		gcMap.setStroke(Color.BLACK);
+		drawnDotplot = this.judgeDrawnDotplot();
 
-		for(int m = 0; m < drawnDotmap.length; m++) {
-			for(int n = 0; n < drawnDotmap[0].length; n++) {
-				if(drawnDotmap[m][n]) {
+
+
+//		とりあえずRevcomのときに黒背景にするのはやめる。
+//		//Draw dot as filled rectangles.
+//		if(this.checkRevcom.isSelected() && this.checkMaximize.isSelected()) {
+//			gcMap.setFill(Color.WHITE);
+//			gcMap.setStroke(Color.WHITE);
+//			drawnDotmap = this.dotplotRevCom.getMaxWindowedDotPlot();
+//		}else if(this.checkRevcom.isSelected() && !this.checkMaximize.isSelected()) {
+//			gcMap.setFill(Color.WHITE);
+//			gcMap.setStroke(Color.WHITE);
+//			drawnDotmap = this.dotplotRevCom.getWindowedDotPlot();
+//		}else if(!this.checkRevcom.isSelected() && this.checkMaximize.isSelected()) {
+//			gcMap.setFill(Color.BLACK);
+//			gcMap.setStroke(Color.BLACK);
+//			drawnDotmap = this.dotplot.getMaxWindowedDotPlot();
+//		}else if(!this.checkRevcom.isSelected() && !this.checkMaximize.isSelected()) {
+//			gcMap.setFill(Color.BLACK);
+//			gcMap.setStroke(Color.BLACK);
+//			drawnDotmap = this.dotplot.getWindowedDotPlot();
+//		}
+
+		for(int m = 0; m < drawnDotplot.length; m++) {
+			for(int n = 0; n < drawnDotplot[0].length; n++) {
+				if(drawnDotplot[m][n]) {
 					//gc.fillRect(m*scaled_dotsize, n*scaled_dotsize, scaled_dotsize, scaled_dotsize);
 					gcMap.fillRect(m*dotsize, n*dotsize, dotsize, dotsize);
 				}
@@ -428,12 +463,32 @@ public class Controller2 implements Initializable {
 		}
 
 		//Draw lines for grids.
-		for(int m = 1; m < drawnDotmap.length ; m++) {
-			gcMap.strokeLine(m*dotsize, 0, m*dotsize, drawnDotmap[0].length * dotsize);
+		for(int m = 1; m < drawnDotplot.length ; m++) {
+			gcMap.strokeLine(m*dotsize, 0, m*dotsize, drawnDotplot[0].length * dotsize);
 		}
 
-		for(int n = 1; n < drawnDotmap[0].length; n++) {
-			gcMap.strokeLine(0, n*dotsize, drawnDotmap.length * dotsize, n*dotsize);
+		for(int n = 1; n < drawnDotplot[0].length; n++) {
+			gcMap.strokeLine(0, n*dotsize, drawnDotplot.length * dotsize, n*dotsize);
+		}
+	}
+
+	private boolean[][] judgeDrawnDotplot(){
+		MultipeakDotplot selectedDotplot = null;
+
+		if      ( !this.checkTopRevcom.isSelected() && !this.checkTopRevcom.isSelected()) {
+			selectedDotplot = dotplot[0];
+		}else if(  this.checkTopRevcom.isSelected() && !this.checkTopRevcom.isSelected()) {
+			selectedDotplot = dotplot[1];
+		}else if( !this.checkTopRevcom.isSelected() &&  this.checkTopRevcom.isSelected()) {
+			selectedDotplot = dotplot[2];
+		}else if(  this.checkTopRevcom.isSelected() &&  this.checkTopRevcom.isSelected()) {
+			selectedDotplot = dotplot[3];
+		}
+
+		if(this.checkMaximize.isSelected()) {
+			return selectedDotplot.getMaxWindowedDotPlot();
+		}else {
+			return selectedDotplot.getWindowedDotPlot();
 		}
 	}
 
@@ -481,11 +536,11 @@ public class Controller2 implements Initializable {
 		MousePreX = MouseX;
 		MousePreY = MouseY;
 
-		this.EraseCanvas(gcMap);
+		this.clearCanvas(gcMap);
 		aff.appendTranslation(MouseDeltaX,MouseDeltaY);
 
 		gcMap.setTransform(aff);
-		this.DrawDotMap();
+		this.drawDotplot();
 		this.HighlightSelectedDotSequence();
 
 		drag = true;
@@ -495,14 +550,14 @@ public class Controller2 implements Initializable {
 	protected void cvMapScroll(ScrollEvent e) {
 	//TODO 四隅の余白部分が均等になるように縮小されるよう修正しないといけない。
 
-		this.EraseCanvas(gcMap);
+		this.clearCanvas(gcMap);
 //		gc.setTransform(aff);
 		scale = e.getDeltaY() >=0 ? 1.05 : 1/1.05;
 		aff.appendScale(scale, scale, (int)Math.ceil((MouseX - aff.getTx() ) / (dotsize * aff.getMxx()) ), (int)Math.ceil((MouseX - aff.getTy() ) / (dotsize * aff.getMyy()) ));
 //		aff.append(scale, 0, (1-scale)*MouseX, 0, scale, (1-scale)*MouseY);
 		gcMap.setTransform(aff);
 
-		this.DrawDotMap();
+		this.drawDotplot();
 		this.HighlightSelectedDotSequence();
 
 	}
@@ -521,9 +576,9 @@ public class Controller2 implements Initializable {
 
 			if (DotX > 0 && DotY > 0) {
 				this.SearchSequence();
-				this.EraseCanvas(gcMap);
+				this.clearCanvas(gcMap);
 				gcMap.setTransform(aff);
-				this.DrawDotMap();
+				this.drawDotplot();
 				this.HighlightSelectedDotSequence();
 
 				taSelectedForwardSequence.setText(refseq.getSeqSubstring(forwardStartPoint[1], forwardSequenceLength));
@@ -544,8 +599,8 @@ public class Controller2 implements Initializable {
 		int X = DotX - 1;
 		int Y = DotY - 1;
 
-		if(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y]) {
-			while(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y] ) {
+		if(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y]) {
+			while(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y] ) {
 				forwardSequenceLength++;
 				X--;
 				Y--;
@@ -557,7 +612,7 @@ public class Controller2 implements Initializable {
 			X = DotX;
 			Y = DotY;
 
-			while(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y]) {
+			while(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y]) {
 				forwardSequenceLength++;
 				X++;
 				Y++;
@@ -566,7 +621,7 @@ public class Controller2 implements Initializable {
 			X = DotX - 1;
 			Y = DotY - 1;
 
-			while(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y]) {
+			while(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y]) {
 				reverseSequenceLength++;
 				X++;
 				Y--;
@@ -578,7 +633,7 @@ public class Controller2 implements Initializable {
 			X = DotX - 2;
 			Y = DotY;
 
-			while(X >= 0 && X < drawnDotmap.length && Y >= 0 && Y < drawnDotmap[0].length && drawnDotmap[X][Y]) {
+			while(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y]) {
 				reverseSequenceLength++;
 				X--;
 				Y++;
@@ -601,22 +656,33 @@ public class Controller2 implements Initializable {
 
 //======================== Sample wave viewer ===========================
 
-	private void DrawSampleWave(int start) {
+	private void drawSeqCanvas(int start, GraphicsContext gc) {
 		//TODO RevComに対応させる
+		//TODO seqCanvasを描画する入り口。ab1_seq, fasta_seq両方描画できるようにする。
+
+		/*
+		 * ab1_seqを受け取ったときと、fasta_seqを受け取ったときの挙動の違いは？
+		 * →ab1、波形と文字の両方を描画
+		 * →fasta 文字だけ描画
+		 * topとleftの違いは？
+		 * →topはそのまま描画。leftは左右反転させて反時計回りに90度回転
+		 * 1. GraphicsContextsを引数として受け取るように変更。
+		 * 2.
+		 */
 
 		topWaveStart = start;
 		topWaveEnd = topWaveStart + cvTopWidth * topDrawInterval;
 
 		//double[][] drawIntensity = this.getDrawIntensity(topWaveStart);
 		double localMax = sample.getLocalMaxIntensity(topWaveStart, topWaveEnd);
-		boolean[][] multiMap = sample.getMultipeakMap();
+		boolean[][] multiMap = sample.getMap();
 		int[] basecall = sample.getBasecalls();
 		int pointer = topDrawedBaseStart;
 		double[][] drawIntensity = this.convertDrawIntensity(sample.getSubarrayMultiAllIntensity(topWaveStart, topWaveEnd), localMax);
 
-		this.EraseCanvas(gcTop);
+		this.clearCanvas(gcTop);
 
-		gcTop.setLineWidth(SAMPLE_WAVELINE_WIDTH);
+		gcTop.setLineWidth(WAVELINE_WIDTH);
 
 		for(int m = 0; m < drawIntensity[0].length - 1; m++) {
 			for(int n = 0; n < 4; n++) {
@@ -635,6 +701,10 @@ public class Controller2 implements Initializable {
 				pointer++;
 			}
 		}
+	}
+
+	private void drawSeqWave() {
+
 	}
 
 	private double[][] convertDrawIntensity(int[][] intensity, double localMax){
@@ -684,18 +754,20 @@ public class Controller2 implements Initializable {
 	private void sliderTopPositionSlide(int start) {
 		sliderTopValue = (int)Math.round(sliderTopPosition.getValue());
 //		sliderTopValue = start;
-		this.EraseCanvas(gcMap);
-		this.DrawDotMap();
+		this.clearCanvas(gcMap);
+		this.drawDotplot();
 		this.HighlightSelectedDotSequence();
-		this.DrawSampleWave(sliderTopValue);
+		this.drawSeqCanvas(sliderTopValue, gcTop);
 	}
 
 	private void sliderTopScaleSlide() {
 		topDrawScale = sliderTopScale.getValue();
 		tfTopZoom.setText(String.format("%1$.1f", topDrawScale));
-		this.DrawSampleWave(sliderTopValue);
+		this.drawSeqCanvas(sliderTopValue, gcTop);
 	}
 
+
+	//TODO TopとLeftの操作はまとめたほうが良いと思う。
 	@FXML
 	protected void tfTopZoomKeyPressed(KeyEvent e) {
 		double scale;
@@ -705,15 +777,45 @@ public class Controller2 implements Initializable {
 			try {
 				scale = Double.parseDouble(tfTopZoom.getText());
 
-				if(SAMPLE_SCALE_MIN <= scale && scale <= SAMPLE_SCALE_MAX) {
+				if(WAVE_SCALE_MIN <= scale && scale <= WAVE_SCALE_MAX) {
 					topDrawScale = scale;
 					sliderTopScale.setValue(scale);
-					this.DrawSampleWave(sliderTopValue);
+					this.drawSeqCanvas(sliderTopValue, gcTop);
 				}else {
 					alertDialog = new Alert(AlertType.INFORMATION);
 					alertDialog.setTitle("Zoom value is out of range.");
 					alertDialog.setHeaderText(null);
-					alertDialog.setContentText("Zoom value should be between " + SAMPLE_SCALE_MIN + " to " + SAMPLE_SCALE_MAX + ".");
+					alertDialog.setContentText("Zoom value should be between " + WAVE_SCALE_MIN + " to " + WAVE_SCALE_MAX + ".");
+					alertDialog.show();
+				}
+			}catch(NumberFormatException exception) {
+				alertDialog = new Alert(AlertType.INFORMATION);
+				alertDialog.setTitle("Invalid number");
+				alertDialog.setHeaderText(null);
+				alertDialog.setContentText("Zoom value is not number.");
+				alertDialog.show();
+			}
+		}
+	}
+
+	@FXML
+	protected void tfLeftZoomKeyPressed(KeyEvent e) {
+		double scale;
+
+		if(e.getCode() == KeyCode.ENTER) {
+
+			try {
+				scale = Double.parseDouble(tfLeftZoom.getText());
+
+				if(WAVE_SCALE_MIN <= scale && scale <= WAVE_SCALE_MAX) {
+					leftDrawScale = scale;
+					sliderLeftScale.setValue(scale);
+					this.drawSeqCanvas(sliderTopValue, gcLeft);
+				}else {
+					alertDialog = new Alert(AlertType.INFORMATION);
+					alertDialog.setTitle("Zoom value is out of range.");
+					alertDialog.setHeaderText(null);
+					alertDialog.setContentText("Zoom value should be between " + WAVE_SCALE_MIN + " to " + WAVE_SCALE_MAX + ".");
 					alertDialog.show();
 				}
 			}catch(NumberFormatException exception) {
@@ -727,6 +829,28 @@ public class Controller2 implements Initializable {
 	}
 
 	private void calculateRangeOfDrawedBase(int[] basecall, int start, int end) {
+
+		if(seqTop.getDataType() == typeAb1) {
+			if( start <= basecall[0] ) {
+				topDrawedBaseStart = 0;
+			}else {
+				for(int m = 1; m < basecall.length; m++) {
+					if(basecall[m-1] < start && start <= basecall[m]) {
+						topDrawedBaseStart = m;
+					}
+				}
+			}
+
+			if( basecall[basecall.length - 1] <= end ) {
+				topDrawedBaseEnd = basecall.length - 1;
+			}else {
+				for(int m = topDrawedBaseStart; m < basecall.length - 1; m++) {
+					if(basecall[m] <= end && end < basecall[m+1]) {
+						topDrawedBaseEnd = m;
+					}
+				}
+			}
+		}
 
 		if( start <= basecall[0] ) {
 			topDrawedBaseStart = 0;
@@ -753,35 +877,47 @@ public class Controller2 implements Initializable {
 
 	@FXML
 	protected void checkRevcomClick() {
-		this.EraseCanvas(gcMap);
-		this.DrawDotMap();
+		this.clearCanvas(gcMap);
+		this.drawDotplot();
 	}
 
 //===================== For debug or etc. ==========================
 
 	@Override
 	public void initialize(URL location, ResourceBundle rb) {
-		gcMap = cvMap.getGraphicsContext2D();
-		gcTop = cvTop.getGraphicsContext2D();
+		gcMap  = cvMap.getGraphicsContext2D();
+		gcTop  = cvTop.getGraphicsContext2D();
+		gcLeft = cvLeft.getGraphicsContext2D();
 
 		cvMapHeight = cvMap.getHeight();
 		cvMapWidth = cvMap.getWidth();
 
 		cvTopHeight = (int)Math.floor(cvTop.getHeight());
 		cvTopWidth = (int)Math.floor(cvTop.getWidth());
+		cvLeftHeight = (int)Math.floor(cvLeft.getHeight());
+		cvLeftWidth = (int)Math.floor(cvLeft.getWidth());
 
 		tfTopZoom.setVisible(false);
+		tfLeftZoom.setVisible(false);
 
 		sliderTopPosition.setVisible(false);
+		sliderLeftPosition.setVisible(false);
 
 		sliderTopScale.setValue(topDrawScale);
-		sliderTopScale.setMin(SAMPLE_SCALE_MIN);
-		sliderTopScale.setMax(SAMPLE_SCALE_MAX);
-		sliderTopScale.valueProperty().addListener((a, b, c) -> this.sliderTopScaleSlide() );
+		sliderTopScale.setMin(WAVE_SCALE_MIN);
+		sliderTopScale.setMax(WAVE_SCALE_MAX);
+		sliderTopScale.valueProperty().addListener((a, b, c) -> this.sliderTopScaleSlide());
 		sliderTopScale.setVisible(false);
 
-		EraseCanvas(gcMap);
-		EraseCanvas(gcTop);
+		sliderLeftScale.setValue(leftDrawScale);
+		sliderLeftScale.setMin(WAVE_SCALE_MIN);
+		sliderLeftScale.setMax(WAVE_SCALE_MAX);
+		sliderLeftScale.valueProperty().addListener((a, b, c) -> this.sliderTopScaleSlide());
+		sliderLeftScale.setVisible(false);
+
+		clearCanvas(gcMap);
+		clearCanvas(gcTop);
+		clearCanvas(gcLeft);
 
 		taLog.appendText("Initialization finished."+CRLF);
 

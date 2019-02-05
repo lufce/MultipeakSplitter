@@ -3,13 +3,13 @@ package jp.lufce.multipeaksplitter;
 public class MultipeakDotplot {
 	//TODO get系のFunctionで、makeDotplot前の例外をつくらないといけない
 	//TODO これってstaticでいいのでは。
-	
+
 	private boolean[][] rawDotplot, windowedDotplot, maxWindowedDotplot;
-	
+
 	private int window = -1;
-	
+
 //========================initialization======================================
-	
+
 	public MultipeakDotplot(boolean[][] map1, boolean[][] map2, int windowSize, int thresholdSize){
 		//TODO 例外を返すようにしないといけない。
 
@@ -18,29 +18,29 @@ public class MultipeakDotplot {
 			rawDotplot = booleanDotplot(map1, map2);
 			windowedDotplot = this.windowDotplot(rawDotplot, windowSize, thresholdSize);
 			maxWindowedDotplot = this.maximizeWindowdDotplot(map1, map2, windowedDotplot);
-		}		
+		}
 	}
-	
+
 //========================get methods======================================
-	
+
 	public int getWindowSize() {
 		return window;
 	}
-	
+
 	public boolean[][] getRawDotPlot(){
 		return rawDotplot;
 	}
-	
+
 	public boolean[][] getWindowedDotPlot(){
 		return windowedDotplot;
 	}
-	
+
 	public boolean[][] getMaxWindowedDotPlot(){
 		return this.maxWindowedDotplot;
 	}
 
 //========================Dotmap calculation======================================
-	
+
 	private boolean[][] booleanDotplot(boolean[][] sample, boolean[][] refseq){
 		boolean[][] dotplot = new boolean[sample[1].length][refseq[1].length];
 
@@ -53,49 +53,23 @@ public class MultipeakDotplot {
 				else {dotplot[m][n]=false;}
 			}
 		}
-		
+
 		return dotplot;
 	}
-	
-//	private boolean[][] windowDotplot(boolean[][] dotplot, int window){
-//		//window sizeがdotplotの大きさよりも大きいときに例外を投げるようにする必要がある
-//		
-//		boolean[][] trimed = new boolean[dotplot.length - window + 1][dotplot[0].length - window + 1];
-//		boolean point;
-//		
-//		for(int m = 0; m < trimed.length; m++) {
-//			for(int n = 0; n < trimed[0].length; n++) {
-//				
-//				point = true;
-//				
-//				for(int w = 0; w < window; w++) {
-//					if(dotplot[m+w][n+w] == false) {
-//						point = false;
-//						break;
-//					}
-//				}
-//				
-//				trimed[m][n] = point;
-//				
-//			}
-//		}
-//		
-//		return trimed;
-//	}
-	
+
 	private boolean[][] windowDotplot(boolean[][] dotplot, int window, int threshold){
 	//TODO window sizeがdotplotの大きさよりも大きいときに例外を投げるようにする必要がある
-	
+
 	boolean[][] trimed = new boolean[dotplot.length - window + 1][dotplot[0].length - window + 1];
 	boolean point;
 	int count;
-	
+
 	for(int m = 0; m < trimed.length; m++) {
 		for(int n = 0; n < trimed[0].length; n++) {
-			
+
 			point = false;
 			count = 0;
-			
+
 			for(int w = 0; w < window; w++) {
 				if(dotplot[m+w][n+w] == true) {
 					count++;
@@ -105,12 +79,12 @@ public class MultipeakDotplot {
 					break;
 				}
 			}
-			
+
 			//逆位についての解析。このやり方でいいのか？
 			if(point == false && m > window) {
-				
+
 				count = 0;
-				
+
 				for(int w = 0; w < window; w++) {
 					if(dotplot[m-w][n+w] == true) {
 						count++;
@@ -121,12 +95,12 @@ public class MultipeakDotplot {
 					}
 				}
 			}
-				
+
 			trimed[m][n] = point;
-			
+
 		}
 	}
-	
+
 	return trimed;
 	}
 
@@ -137,7 +111,7 @@ public class MultipeakDotplot {
 				maximized[m][n] = windowed[m][n];
 			}
 		}
-		
+
 		for(int m=1; m<windowed.length-1; m++) {
 			for(int n=1; n<windowed[1].length-1; n++) {
 				if(windowed[m][n]==true) {
@@ -150,7 +124,7 @@ public class MultipeakDotplot {
 							}
 						}
 					}
-					
+
 					if(windowed[m-1][n-1]==false) {
 						for(int k=1; m-k >= 0 && n-k >= 0; k++) {
 							if(rawDotplot[m-k][n-k]==true) {
@@ -167,5 +141,5 @@ public class MultipeakDotplot {
 	}
 
 //===========================utilities=================================
-	
+
 }

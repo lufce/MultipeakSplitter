@@ -53,7 +53,7 @@ public class Controller implements Initializable {
 	private MultipeakDotplot multiDot;
 	private MultipeakDotplot revcomMultiDot;
 	private Ab1Sequence sample;
-	private TextSequence refseq;
+	private FastaSequence refseq;
 	private SequenceMaster seqTop;
 	private SequenceMaster seqLeft;
 	private int window;
@@ -189,7 +189,7 @@ public class Controller implements Initializable {
 
 			//ab1配列オブジェクトとRefSeq配列オブジェクトを生成
 			sample = new Ab1Sequence(new File(taSamplePath.getText()));
-			refseq = new TextSequence(new File(taReferencePath.getText()));
+			refseq = new FastaSequence(new File(taReferencePath.getText()));
 
 			//TODO SequenceMasterを使ってみる
 			seqTop = new SequenceMaster(new File(taSamplePath.getText()));
@@ -204,8 +204,8 @@ public class Controller implements Initializable {
 
 			//Dotplot配列を生成
 			sample.makeMap(cutoff);
-			multiDot = new MultipeakDotplot(sample.getMultipeakMap(), refseq.getMap(), window, threshold);
-			revcomMultiDot = new MultipeakDotplot(sample.getRevcomMultipeakMap(), refseq.getMap(), window, threshold);
+			multiDot = new MultipeakDotplot(sample.getMap(), refseq.getMap(), window, threshold);
+			revcomMultiDot = new MultipeakDotplot(sample.getRevcomMap(), refseq.getMap(), window, threshold);
 
 			//Sliding Windowで見やすくしたDotplot配列を生成
 			//windowedDotmap = multiDot.getWindowedDotPlot();
@@ -260,7 +260,7 @@ public class Controller implements Initializable {
 				return;
 			}
 			sample.makeMap(cutoff);
-			multiDot = new MultipeakDotplot(sample.getMultipeakMap(), refseq.getMap(), window, threshold);
+			multiDot = new MultipeakDotplot(sample.getMap(), refseq.getMap(), window, threshold);
 			//windowedDotmap = multiDot.getWindowedDotPlot();
 			this.EraseCanvas(gc1);
 			this.DrawDotMap();
@@ -554,7 +554,7 @@ public class Controller implements Initializable {
 
 		//double[][] drawIntensity = this.getDrawIntensity(sampleWaveStart);
 		double localMax = sample.getLocalMaxIntensity(sampleWaveStart, sampleWaveEnd);
-		boolean[][] multiMap = sample.getMultipeakMap();
+		boolean[][] multiMap = sample.getMap();
 		int[] basecall = sample.getBasecalls();
 		int pointer = sampleDrawedBaseStart;
 		double[][] drawIntensity = this.convertDrawIntensity(sample.getSubarrayMultiAllIntensity(sampleWaveStart, sampleWaveEnd), localMax);

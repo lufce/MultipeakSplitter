@@ -1,8 +1,6 @@
 package jp.lufce.multipeaksplitter;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 
 import org.biojavax.bio.seq.io.FastaFormat;
@@ -11,7 +9,6 @@ public class SequenceMaster{
 
 	private int dataType = 0;			//このシークエンスデータがFASTAなのかABIなのか未定義なのかを決める。
 										// 0:未定義　1:FASTA　2:ABI　とする
-	protected boolean[][] map;
 
 	//final private int typeUndef = 0;
 	final private int typeFasta = 1;
@@ -19,12 +16,12 @@ public class SequenceMaster{
 
 	private FastaFormat fastaFormat = new FastaFormat();
 
-	protected TextSequence textSeq;
+	protected FastaSequence fastaSeq;
 	protected Ab1Sequence ab1Seq;
 
 	public SequenceMaster(File file) throws IOException {
 		if(fastaFormat.canRead(file)) {
-			textSeq = new TextSequence(file);
+			fastaSeq = new FastaSequence(file);
 			dataType = typeFasta;
 		}else {
 			ab1Seq = new Ab1Sequence(file);
@@ -41,13 +38,39 @@ public class SequenceMaster{
 
 		switch(dataType) {
 		case typeFasta:
-			map = textSeq.getMap();break;
+			map = fastaSeq.getMap();break;
 		case typeAb1:
-			map = ab1Seq.getMultipeakMap();break;
+			map = ab1Seq.getMap();break;
 		}
 
 		return map;
 	}
 
+	public boolean[][] getRevcomMap(){
+		boolean[][] map = null;
+
+		switch(dataType) {
+		case typeFasta:
+			map = fastaSeq.getRevcomMap();break;
+		case typeAb1:
+			map = ab1Seq.getRevcomMap();break;
+		}
+
+		return map;
+	}
+
+	public int getSequenceLength() {
+		int sequenceLength = 0;
+
+		switch(dataType) {
+		case typeFasta:
+			sequenceLength = fastaSeq.getSequenceLength();break;
+		case typeAb1:
+			sequenceLength = ab1Seq.getSequenceLength();break;
+		}
+
+		return sequenceLength;
+
+	}
 
 }

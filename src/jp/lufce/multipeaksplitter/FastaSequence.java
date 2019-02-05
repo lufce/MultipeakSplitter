@@ -11,7 +11,8 @@ import org.biojavax.bio.seq.RichSequence;
 import org.biojavax.bio.seq.io.FastaFormat;
 import org.biojavax.bio.seq.io.SimpleRichSequenceBuilder;
 
-public class TextSequence {
+
+public class FastaSequence {
 
 	//TODO 今はFASTAファイルしか対応していないが、Plainテキストとかマルチピークのテキスト出力ファイルとかを読み込めるようにしたい。
 
@@ -19,13 +20,14 @@ public class TextSequence {
 	FastaFormat format = new FastaFormat();
 	private Sequence seq;
 	private boolean[][] map;
+	private boolean[][] revcomMap;
 
 	final static private int A = 0;
 	final static private int C = 1;
 	final static private int G = 2;
 	final static private int T = 3;
 
-	public TextSequence(File file){
+	public FastaSequence(File file){
 		f = file;
 		try {
 			this.makeSequence();
@@ -41,6 +43,14 @@ public class TextSequence {
 	public boolean[][] getMap(){
 		if(seq != null) {
 			return map;
+		}else {
+			return null;
+		}
+	}
+
+	public boolean[][] getRevcomMap(){
+		if(seq != null) {
+			return revcomMap;
 		}else {
 			return null;
 		}
@@ -93,12 +103,7 @@ public class TextSequence {
 	}
 
 	public void makeMap() {
-		map = seqString2Boolean(seq.seqString());
-	}
-
-	private static boolean[][] seqString2Boolean(String seqString){
-
-		boolean[][] boo = new boolean[4][seqString.length()];
+		String seqString = seq.seqString();
 		char base;
 
 		//塩基配列をbooleanの二次元配列に変換
@@ -108,25 +113,32 @@ public class TextSequence {
 			switch(base) {
 			case 'A':
 			case 'a':
-				boo[A][n] = true;break;
+				map[A][n] = true;
+				revcomMap[T][n] = true;
+				break;
 			case 'C':
 			case 'c':
-				boo[C][n] = true;break;
+				map[C][n] = true;
+				revcomMap[G][n] = true;
+				break;
 			case 'G':
 			case 'g':
-				boo[G][n] = true;break;
+				map[G][n] = true;
+				revcomMap[C][n] = true;
+				break;
 			case 'T':
 			case 't':
-				boo[T][n] = true;break;
+				map[T][n] = true;
+				revcomMap[A][n] = true;
+				break;
 			case 'N':
 			case 'n':
 				for(int i = 0; i < 4; i++) {
-					boo[i][n] = true;
+					map[i][n] = true;
+					revcomMap[i][n] = true;
 				}
 				break;
 			}
 		}
-
-		return boo;
 	}
 }
