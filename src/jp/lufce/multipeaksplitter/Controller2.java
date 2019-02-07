@@ -59,15 +59,14 @@ public class Controller2 implements Initializable {
 	 */
 
 	private MultipeakDotplot dotplotRevCom;
-	private Ab1Sequence sample;
-	private FastaSequence refseq;
-
-	final private int typeUndef = 0;
-	final private int typeFasta = 1;
-	final private int typeAb1   = 2;
+	private Ab1Sequence sample;		//あとで消す
+	private FastaSequence refseq;	//あとで消す
 
 	private SequenceMaster seqTop;
 	private SequenceMaster seqLeft;
+
+	private SequenceCanvasDrawer cvTopDrawer;
+	private SequenceCanvasDrawer cvLeftDrawer;
 	private int topCutoff;
 	private int leftCutoff;
 	private int window;
@@ -111,6 +110,7 @@ public class Controller2 implements Initializable {
 	@FXML protected TextField tfTopZoom;
 	@FXML protected TextField tfLeftZoom;
 	private int sliderTopValue;
+	private int sliderLeftValue;
 	private GraphicsContext gcTop;
 	private int cvTopHeight;
 	private int cvTopWidth;
@@ -221,19 +221,22 @@ public class Controller2 implements Initializable {
 				return;
 			}
 
+			//SequenceMasterの初期化を行って、逆相補鎖同士などを含めたDotplotを作る。
 			makeMaps();
 			makeDotplots();
 
-			//Refseq配列をカラムに入れる。この表示方法は変えたほうがいいのではないか？
-			this.setReferenceSequenceString();
+			//Sequence用描画クラスを生成して、最初部分から描画する
+			cvTopDrawer = new SequenceCanvasDrawer(gcTop, seqTop, false);
+			cvLeftDrawer = new SequenceCanvasDrawer(gcLeft, seqLeft, true);
+
+			cvTopDrawer.drawSeqCanvas(0);
+			cvLeftDrawer.drawSeqCanvas(0);
+
 			taLog.appendText("end making dotplot"+CRLF);
 
-			//シークエンス解析の波形データの表示
-			//multiIntensity = sample.getMultiAllIntensity();
-			this.drawSeqCanvas(0,gcTop);
-
+			/*
 			//波形の拡大縮小用のスライダーの設定
-			sliderTopPosition.setMax(Math.floor((sample.getTraceLength() - sliderTopPosition.getWidth()) / topDrawInterval));
+			sliderTopPosition.setMax(Math.floor((seqTop.ab1Seq.getTraceLength() - sliderTopPosition.getWidth()) / topDrawInterval));
 			sliderTopPosition.valueProperty().addListener( (a, b, c) -> this.sliderTopPositionSlide(c.intValue()) );
 			sliderTopPosition.setVisible(true);
 
@@ -242,6 +245,17 @@ public class Controller2 implements Initializable {
 			tfTopZoom.setText(String.valueOf(topDrawScale));
 			tfTopZoom.setVisible(true);
 
+			sliderLeftPosition.setMax(Math.floor((seqTop.ab1Seq.getTraceLength() - sliderLeftPosition.getWidth()) / topDrawInterval));
+			sliderLeftPosition.valueProperty().addListener( (a, b, c) -> this.sliderLeftPositionSlide(c.intValue()) );
+			sliderLeftPosition.setVisible(true);
+
+			sliderLeftScale.setVisible(true);
+
+			tfLeftZoom.setText(String.valueOf(topDrawScale));
+			tfLeftZoom.setVisible(true);
+
+			*/
+
 			//ファイル入出力のタブからシークエンス処理のタブに表示を切り替え
 			tabPane1.getSelectionModel().select(tabSequence);
 
@@ -249,12 +263,20 @@ public class Controller2 implements Initializable {
 			forwardSequenceLength = 0;
 			reverseSequenceLength = 0;
 
+			taLog.appendText("make dotplot finished"+CRLF);
+
 			//画面の更新
 			this.updateDotmapScreen(false);
 
 		}catch(Exception exception) {
-			taLog.appendText(exception.getMessage());
-			taLog.appendText(exception.getStackTrace().toString());
+//			taLog.appendText(exception.getMessage());
+//			taLog.appendText(exception.getStackTrace().toString());
+			java.lang.StackTraceElement[] stack = exception.getStackTrace();
+			System.out.println(exception.getMessage());
+			for (int i=0; i<stack.length; i++) {
+				System.out.println(stack[i]);
+			}
+
 		}
 	}
 
@@ -277,7 +299,7 @@ public class Controller2 implements Initializable {
 			this.clearCanvas(gcMap);
 			this.drawDotplot();
 			taLog.appendText("end remaking dotplot"+CRLF);
-			this.drawSeqCanvas(topWaveStart,gcTop);
+			//this.drawSeqCanvas(topWaveStart,gcTop);
 			tabPane1.getSelectionModel().select(tabSequence);
 		}
 	}
@@ -285,18 +307,18 @@ public class Controller2 implements Initializable {
 	private void makeMaps() {
 		//それぞれのseqについてmapを生成する
 		switch(seqTop.getDataType()) {
-		case typeFasta:
+		case SequenceMaster.typeFasta:
 			seqTop.fastaSeq.makeMap();break;
-		case typeAb1:
+		case SequenceMaster.typeAb1:
 			seqTop.ab1Seq.makeMap(topCutoff);break;
 		default:
 			taLog.appendText("The datatype of top-sequence is invalid. Datatype:"+String.valueOf(seqTop.getDataType()));
 		}
 
 		switch(seqLeft.getDataType()) {
-		case typeFasta:
+		case SequenceMaster.typeFasta:
 			seqLeft.fastaSeq.makeMap();break;
-		case typeAb1:
+		case SequenceMaster.typeAb1:
 			seqLeft.ab1Seq.makeMap(leftCutoff);break;
 		default:
 			taLog.appendText("The datatype of left-sequence is invalid. Datatype:"+String.valueOf(seqLeft.getDataType()));
@@ -371,7 +393,7 @@ public class Controller2 implements Initializable {
 			invalid = true;
 		}
 
-		if( refseq.getSequenceLength() < window || sample.getSequenceLength() < window) {
+		if( seqLeft.getSequenceLength() < window || seqTop.getSequenceLength() < window) {
 			taLog.appendText("window size is beyond sequence length" + CRLF);
 			invalid = true;
 		}
@@ -398,8 +420,9 @@ public class Controller2 implements Initializable {
 		}
 	}
 
+	@Deprecated
 	private void clearCanvas(GraphicsContext gc) {
-
+		//消す予定
 		gc.setFill(Color.WHITE);
 
 //		Revcomのときに色を変えるかどうか。
@@ -656,100 +679,7 @@ public class Controller2 implements Initializable {
 
 //======================== Sample wave viewer ===========================
 
-	private void drawSeqCanvas(int start, GraphicsContext gc) {
-		//TODO RevComに対応させる
-		//TODO seqCanvasを描画する入り口。ab1_seq, fasta_seq両方描画できるようにする。
 
-		/*
-		 * ab1_seqを受け取ったときと、fasta_seqを受け取ったときの挙動の違いは？
-		 * →ab1、波形と文字の両方を描画
-		 * →fasta 文字だけ描画
-		 * topとleftの違いは？
-		 * →topはそのまま描画。leftは左右反転させて反時計回りに90度回転
-		 * 1. GraphicsContextsを引数として受け取るように変更。
-		 * 2.
-		 */
-
-		topWaveStart = start;
-		topWaveEnd = topWaveStart + cvTopWidth * topDrawInterval;
-
-		//double[][] drawIntensity = this.getDrawIntensity(topWaveStart);
-		double localMax = sample.getLocalMaxIntensity(topWaveStart, topWaveEnd);
-		boolean[][] multiMap = sample.getMap();
-		int[] basecall = sample.getBasecalls();
-		int pointer = topDrawedBaseStart;
-		double[][] drawIntensity = this.convertDrawIntensity(sample.getSubarrayMultiAllIntensity(topWaveStart, topWaveEnd), localMax);
-
-		this.clearCanvas(gcTop);
-
-		gcTop.setLineWidth(WAVELINE_WIDTH);
-
-		for(int m = 0; m < drawIntensity[0].length - 1; m++) {
-			for(int n = 0; n < 4; n++) {
-				gcTop.setStroke(BASE_COLOR[n]);
-				gcTop.strokeLine(m, drawIntensity[n][m], m+1, drawIntensity[n][m+1]);
-			}
-
-			if(basecall[pointer] == m + topWaveStart) {
-				for(int n = 0; n < 4; n++) {
-					if(multiMap[n][pointer]) {
-						gcTop.setFill(BASE_COLOR[n]);
-						gcTop.fillText(BASE[n], m - 5, 110 + 10 * n);
-					}
-				}
-
-				pointer++;
-			}
-		}
-	}
-
-	private void drawSeqWave() {
-
-	}
-
-	private double[][] convertDrawIntensity(int[][] intensity, double localMax){
-		double[][] converted = new double[intensity.length][intensity[1].length];
-
-		for(int m = 0; m < intensity[0].length; m++) {
-			for(int n = 0; n < 4; n++) {
-				converted[n][m] = (1 - intensity[n][m] / localMax * topDrawScale) * 100;
-			}
-		}
-
-		return converted;
-	}
-
-//	private double getMaxIntensity(double[][] multi) {
-//		double localMax = Double.MIN_VALUE;
-//
-//		for(int m = 0; m < multi[0].length; m++) {
-//			for(int n = 0; n < 4; n++) {
-//				if(multi[n][m] > localMax) {
-//					localMax = multi[n][m];
-//				}
-//			}
-//		}
-//
-//		return localMax;
-//	}
-
-//	private double[][] getDrawIntensity(int start) throws ArrayIndexOutOfBoundsException {
-//
-//		if(topWaveEnd > multiIntensity[0].length) {
-//			System.out.println("out of bounds");
-//			throw new ArrayIndexOutOfBoundsException();
-//		}
-//
-//		double[][] drawIntensity = new double[4][cvTopWidth];
-//
-//		for(int m = start; m < start + cvTopWidth ; m++) {
-//			for(int n = 0; n < 4; n++) {
-//				drawIntensity[n][m-start] = multiIntensity[n][m * topDrawInterval];
-//			}
-//		}
-//
-//		return drawIntensity;
-//	}
 
 	private void sliderTopPositionSlide(int start) {
 		sliderTopValue = (int)Math.round(sliderTopPosition.getValue());
@@ -757,7 +687,16 @@ public class Controller2 implements Initializable {
 		this.clearCanvas(gcMap);
 		this.drawDotplot();
 		this.HighlightSelectedDotSequence();
-		this.drawSeqCanvas(sliderTopValue, gcTop);
+		cvTopDrawer.drawSeqCanvas(sliderTopValue);
+	}
+
+	private void sliderLeftPositionSlide(int start) {
+		sliderLeftValue = (int)Math.round(sliderLeftPosition.getValue());
+//		sliderLeftValue = start;
+		this.clearCanvas(gcMap);
+		this.drawDotplot();
+		this.HighlightSelectedDotSequence();
+		cvLeftDrawer.drawSeqCanvas(sliderLeftValue);
 	}
 
 	private void sliderTopScaleSlide() {
@@ -830,7 +769,7 @@ public class Controller2 implements Initializable {
 
 	private void calculateRangeOfDrawedBase(int[] basecall, int start, int end) {
 
-		if(seqTop.getDataType() == typeAb1) {
+		if(seqTop.getDataType() == SequenceMaster.typeAb1) {
 			if( start <= basecall[0] ) {
 				topDrawedBaseStart = 0;
 			}else {

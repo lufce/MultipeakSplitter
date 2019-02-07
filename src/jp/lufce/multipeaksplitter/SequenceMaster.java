@@ -10,9 +10,9 @@ public class SequenceMaster{
 	private int dataType = 0;			//このシークエンスデータがFASTAなのかABIなのか未定義なのかを決める。
 										// 0:未定義　1:FASTA　2:ABI　とする
 
-	//final private int typeUndef = 0;
-	final private int typeFasta = 1;
-	final private int typeAb1   = 2;
+	static final public int typeUndef = 0;
+	static final public int typeFasta = 1;
+	static final public int typeAb1   = 2;
 
 	private FastaFormat fastaFormat = new FastaFormat();
 

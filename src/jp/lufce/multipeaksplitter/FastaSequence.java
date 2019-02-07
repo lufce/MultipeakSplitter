@@ -27,10 +27,12 @@ public class FastaSequence {
 	final static private int G = 2;
 	final static private int T = 3;
 
-	public FastaSequence(File file){
+	FastaSequence(File file){
 		f = file;
 		try {
 			this.makeSequence();
+			map = new boolean[4][seq.length()];
+			revcomMap = new boolean[4][seq.length()];
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
