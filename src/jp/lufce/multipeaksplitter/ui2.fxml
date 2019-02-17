@@ -6,9 +6,9 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="750.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jp.lufce.multipeaksplitter.Controller2">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jp.lufce.multipeaksplitter.Controller2">
    <children>
-      <Canvas fx:id="cvMap" height="500.0" layoutX="414.0" layoutY="228.0" onMouseClicked="#cvMapMouseClicked" onMouseDragged="#cvMapMouseDragged" onMouseMoved="#cvMapMouseMoved" onMousePressed="#cvMapMousePressed" onScroll="#cvMapScroll" width="600.0" />
+      <Canvas fx:id="cvDotplot" height="600.0" layoutX="414.0" layoutY="180.0" onMouseClicked="#cvMapMouseClicked" onMouseDragged="#cvMapMouseDragged" onMouseMoved="#cvMapMouseMoved" onMousePressed="#cvMapMousePressed" onScroll="#cvMapScroll" width="600.0" />
       <TabPane fx:id="tabPane1" layoutX="14.0" layoutY="14.0" prefHeight="713.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
         <tabs>
           <Tab text="FIle">
@@ -58,15 +58,15 @@
           </Tab>
         </tabs>
       </TabPane>
-      <Canvas fx:id="cvLeft" height="500.0" layoutX="242.0" layoutY="228.0" width="145.0" />
-      <Canvas fx:id="cvTop" height="145.0" layoutX="414.0" layoutY="61.0" width="600.0" />
-      <Slider fx:id="sliderTopPosition" layoutX="414.0" layoutY="210.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="600.0" />
-      <Slider fx:id="sliderTopScale" layoutX="394.0" layoutY="58.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="150.0" prefWidth="14.0" />
-      <Label layoutX="350.0" layoutY="60.0" text="Zoom" />
-      <TextField fx:id="tfTopZoom" layoutX="346.0" layoutY="80.0" onKeyPressed="#tfTopZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
-      <Slider fx:id="sliderLeftPosition" layoutX="394.0" layoutY="224.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="500.0" prefWidth="14.0" rotate="180.0" />
-      <Slider fx:id="sliderLeftScale" layoutX="242.0" layoutY="210.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="145.0" rotate="180.0" />
-      <TextField fx:id="tfLeftZoom" layoutX="282.0" layoutY="182.0" onKeyPressed="#tfLeftZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
-      <Label layoutX="248.0" layoutY="192.0" text="Zoom" />
+      <Canvas fx:id="cvLeft" height="600.0" layoutX="242.0" layoutY="180.0" width="145.0" />
+      <Canvas fx:id="cvTop" height="145.0" layoutX="414.0" layoutY="10.0" width="600.0" />
+      <Slider fx:id="sliderTopPosition" layoutX="414.0" layoutY="160.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="600.0" />
+      <Slider fx:id="sliderTopScale" layoutX="394.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="150.0" prefWidth="14.0" />
+      <Label layoutX="350.0" layoutY="10.0" text="Zoom" />
+      <TextField fx:id="tfTopZoom" layoutX="346.0" layoutY="30.0" onKeyPressed="#tfTopZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
+      <Slider fx:id="sliderLeftPosition" layoutX="394.0" layoutY="180.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="600.0" prefWidth="14.0" rotate="180.0" />
+      <Slider fx:id="sliderLeftScale" layoutX="242.0" layoutY="160.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="145.0" rotate="180.0" />
+      <TextField fx:id="tfLeftZoom" layoutX="282.0" layoutY="132.0" onKeyPressed="#tfLeftZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
+      <Label layoutX="248.0" layoutY="142.0" text="Zoom" />
    </children>
 </AnchorPane>

@@ -33,7 +33,7 @@ public class Controller2 implements Initializable {
 
 
 	final private String CRLF = System.getProperty("line.separator");
-	final private double GRID_LINE_WIDTH = 0.025;
+//	final private double GRID_LINE_WIDTH = 0.025;
 	final private double WAVE_SCALE_MAX = 20;
 	final private double WAVE_SCALE_MIN = 0.2;
 	final private double WAVE_SCALE_DEFAULT = 1;
@@ -96,10 +96,9 @@ public class Controller2 implements Initializable {
 	@FXML protected TextField tfForwardIntercept;
 	@FXML protected TextField tfReverseIntercept;
 
-	@FXML protected Canvas cvMap;
-	private double cvMapHeight;
-	private double cvMapWidth;
-	private GraphicsContext gcMap;
+	@FXML protected Canvas cvDotplot;
+	private GraphicsContext gcDotplot;
+	private DotplotCanvasDrawer cvDotplotDrawer;
 
 	@FXML protected Canvas cvLeft;
 	@FXML protected Canvas cvTop;
@@ -109,31 +108,32 @@ public class Controller2 implements Initializable {
 	@FXML protected Slider sliderLeftScale;
 	@FXML protected TextField tfTopZoom;
 	@FXML protected TextField tfLeftZoom;
-	private int sliderTopValue;
-	private int sliderLeftValue;
+//	private int sliderTopValue;
+//	private int sliderLeftValue;
 	private GraphicsContext gcTop;
-	private int cvTopHeight;
-	private int cvTopWidth;
-	private int topDrawedBaseStart = 0;
-	private int topDrawedBaseEnd = 0;
-	private int topWaveStart;
-	private int topWaveEnd;
-
 	private GraphicsContext gcLeft;
-	private int cvLeftHeight;
-	private int cvLeftWidth;
-	private int leftDrawedBaseStart = 0;
-	private int leftDrawedBaseEnd = 0;
-	private int leftWaveStart;
-	private int leftWaveEnd;
+
+//	private int cvTopHeight;
+//	private int cvTopWidth;
+//	private int topDrawedBaseStart = 0;
+//	private int topDrawedBaseEnd = 0;
+//	private int topWaveStart;
+//	private int topWaveEnd;
+//	private int cvLeftHeight;
+//	private int cvLeftWidth;
+//	private int leftDrawedBaseStart = 0;
+//	private int leftDrawedBaseEnd = 0;
+//	private int leftWaveStart;
+//	private int leftWaveEnd;
 
 	//private int[][] multiIntensity;
 	private int topDrawInterval = 1;
+	private int leftDrawInterval = 1;
 	private double topDrawScale = WAVE_SCALE_DEFAULT;
 	private double leftDrawScale = WAVE_SCALE_DEFAULT;
 
 	private boolean[][] drawnDotplot;
-	private int dotsize = 1;
+	private int dotsize = 1;	//多分消せる
 	private double scale = 1.0;
 
 	private double MouseX;
@@ -187,13 +187,11 @@ public class Controller2 implements Initializable {
 
 	private void updateDotmapScreen(boolean highlighting) {
 		//画面更新の一括処理を行う。
-
-		this.clearCanvas(gcMap);
-		this.drawDotplot();
+		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
 
 		//ハイライトが行われているならそれも更新
 		if(highlighting == true) {
-			this.HighlightSelectedDotSequence();
+			this.highlightSelectedDotSequence();
 		}
 	}
 
@@ -229,32 +227,17 @@ public class Controller2 implements Initializable {
 			cvTopDrawer = new SequenceCanvasDrawer(gcTop, seqTop, false);
 			cvLeftDrawer = new SequenceCanvasDrawer(gcLeft, seqLeft, true);
 
-			cvTopDrawer.drawSeqCanvas(0);
-			cvLeftDrawer.drawSeqCanvas(0);
+			cvTopDrawer.updateSeqCanvas(0);
+			cvLeftDrawer.updateSeqCanvas(0);
+
+			//Dotplot用描画クラスを生成
+			cvDotplotDrawer = new DotplotCanvasDrawer(this.gcDotplot);
+			cvDotplotDrawer.setDrawnDotplot(this.judgeDrawnDotplot());
 
 			taLog.appendText("end making dotplot"+CRLF);
 
-			/*
-			//波形の拡大縮小用のスライダーの設定
-			sliderTopPosition.setMax(Math.floor((seqTop.ab1Seq.getTraceLength() - sliderTopPosition.getWidth()) / topDrawInterval));
-			sliderTopPosition.valueProperty().addListener( (a, b, c) -> this.sliderTopPositionSlide(c.intValue()) );
-			sliderTopPosition.setVisible(true);
-
-			sliderTopScale.setVisible(true);
-
-			tfTopZoom.setText(String.valueOf(topDrawScale));
-			tfTopZoom.setVisible(true);
-
-			sliderLeftPosition.setMax(Math.floor((seqTop.ab1Seq.getTraceLength() - sliderLeftPosition.getWidth()) / topDrawInterval));
-			sliderLeftPosition.valueProperty().addListener( (a, b, c) -> this.sliderLeftPositionSlide(c.intValue()) );
-			sliderLeftPosition.setVisible(true);
-
-			sliderLeftScale.setVisible(true);
-
-			tfLeftZoom.setText(String.valueOf(topDrawScale));
-			tfLeftZoom.setVisible(true);
-
-			*/
+			//スライダーの設定
+			this.initializeSliders();
 
 			//ファイル入出力のタブからシークエンス処理のタブに表示を切り替え
 			tabPane1.getSelectionModel().select(tabSequence);
@@ -295,9 +278,9 @@ public class Controller2 implements Initializable {
 			}
 			makeMaps();
 			makeDotplots();
-			//windowedDotmap = multiDot.getWindowedDotPlot();
-			this.clearCanvas(gcMap);
-			this.drawDotplot();
+
+			cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+
 			taLog.appendText("end remaking dotplot"+CRLF);
 			//this.drawSeqCanvas(topWaveStart,gcTop);
 			tabPane1.getSelectionModel().select(tabSequence);
@@ -308,18 +291,22 @@ public class Controller2 implements Initializable {
 		//それぞれのseqについてmapを生成する
 		switch(seqTop.getDataType()) {
 		case SequenceMaster.typeFasta:
-			seqTop.fastaSeq.makeMap();break;
+			seqTop.fastaSeq.makeMap();
+			break;
 		case SequenceMaster.typeAb1:
-			seqTop.ab1Seq.makeMap(topCutoff);break;
+			seqTop.ab1Seq.makeMap(topCutoff);
+			break;
 		default:
 			taLog.appendText("The datatype of top-sequence is invalid. Datatype:"+String.valueOf(seqTop.getDataType()));
 		}
 
 		switch(seqLeft.getDataType()) {
 		case SequenceMaster.typeFasta:
-			seqLeft.fastaSeq.makeMap();break;
+			seqLeft.fastaSeq.makeMap();
+			break;
 		case SequenceMaster.typeAb1:
-			seqLeft.ab1Seq.makeMap(leftCutoff);break;
+			seqLeft.ab1Seq.makeMap(leftCutoff);
+			break;
 		default:
 			taLog.appendText("The datatype of left-sequence is invalid. Datatype:"+String.valueOf(seqLeft.getDataType()));
 		}
@@ -338,9 +325,9 @@ public class Controller2 implements Initializable {
 
 	@FXML
 	protected void bResetViewClick() {
-		aff = IDENTITY_TRANSFORM.clone();
-		this.clearCanvas(gcMap);
-		this.drawDotplot();
+		aff = this.IDENTITY_TRANSFORM.clone();
+		cvDotplotDrawer.resetAffine();
+		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvTopDrawer);
 	}
 
 	private boolean setValueOfCutoffWindow() {
@@ -420,81 +407,6 @@ public class Controller2 implements Initializable {
 		}
 	}
 
-	@Deprecated
-	private void clearCanvas(GraphicsContext gc) {
-		//消す予定
-		gc.setFill(Color.WHITE);
-
-//		Revcomのときに色を変えるかどうか。
-//		if(this.checkRevcom.isSelected() && gc.equals(gcMap)) {
-//			gc.setFill(Color.BLACK);
-//		}else {
-//			gc.setFill(Color.WHITE);
-//		}
-
-		gc.setTransform(IDENTITY_TRANSFORM);
-		gc.fillRect(0, 0, cvMapWidth, cvMapHeight);
-	}
-
-	private void drawDotplot() {
-
-		gcMap.setLineWidth(GRID_LINE_WIDTH);
-		gcMap.setTransform(aff);
-
-		//seqTopのCanvasで表示されている部分に当たるMap部分を黄色でハイライトする。
-		//TODO seqLeftに対してもこの操作を行わないといけない。
-		//TODO seqがAb1形式じゃない場合どうする？
-		this.calculateRangeOfDrawedBase(seqTop.ab1Seq.getBasecalls(), topWaveStart ,topWaveEnd);
-		gcMap.setFill(Color.YELLOW);
-		gcMap.fillRect(topDrawedBaseStart, 0, (topDrawedBaseEnd - topDrawedBaseStart + 1)*dotsize, seqLeft.getSequenceLength()*dotsize);
-
-
-		//ドットを描画していく
-		gcMap.setFill(Color.BLACK);
-		gcMap.setStroke(Color.BLACK);
-		drawnDotplot = this.judgeDrawnDotplot();
-
-
-
-//		とりあえずRevcomのときに黒背景にするのはやめる。
-//		//Draw dot as filled rectangles.
-//		if(this.checkRevcom.isSelected() && this.checkMaximize.isSelected()) {
-//			gcMap.setFill(Color.WHITE);
-//			gcMap.setStroke(Color.WHITE);
-//			drawnDotmap = this.dotplotRevCom.getMaxWindowedDotPlot();
-//		}else if(this.checkRevcom.isSelected() && !this.checkMaximize.isSelected()) {
-//			gcMap.setFill(Color.WHITE);
-//			gcMap.setStroke(Color.WHITE);
-//			drawnDotmap = this.dotplotRevCom.getWindowedDotPlot();
-//		}else if(!this.checkRevcom.isSelected() && this.checkMaximize.isSelected()) {
-//			gcMap.setFill(Color.BLACK);
-//			gcMap.setStroke(Color.BLACK);
-//			drawnDotmap = this.dotplot.getMaxWindowedDotPlot();
-//		}else if(!this.checkRevcom.isSelected() && !this.checkMaximize.isSelected()) {
-//			gcMap.setFill(Color.BLACK);
-//			gcMap.setStroke(Color.BLACK);
-//			drawnDotmap = this.dotplot.getWindowedDotPlot();
-//		}
-
-		for(int m = 0; m < drawnDotplot.length; m++) {
-			for(int n = 0; n < drawnDotplot[0].length; n++) {
-				if(drawnDotplot[m][n]) {
-					//gc.fillRect(m*scaled_dotsize, n*scaled_dotsize, scaled_dotsize, scaled_dotsize);
-					gcMap.fillRect(m*dotsize, n*dotsize, dotsize, dotsize);
-				}
-			}
-		}
-
-		//Draw lines for grids.
-		for(int m = 1; m < drawnDotplot.length ; m++) {
-			gcMap.strokeLine(m*dotsize, 0, m*dotsize, drawnDotplot[0].length * dotsize);
-		}
-
-		for(int n = 1; n < drawnDotplot[0].length; n++) {
-			gcMap.strokeLine(0, n*dotsize, drawnDotplot.length * dotsize, n*dotsize);
-		}
-	}
-
 	private boolean[][] judgeDrawnDotplot(){
 		MultipeakDotplot selectedDotplot = null;
 
@@ -515,19 +427,19 @@ public class Controller2 implements Initializable {
 		}
 	}
 
-	private void HighlightSelectedDotSequence() {
+	private void highlightSelectedDotSequence() {
 		if(forwardSequenceLength > 0) {
-			gcMap.setFill(Color.RED);
+			gcDotplot.setFill(Color.RED);
 
 			for(int N = 0; N < forwardSequenceLength; N++) {
-				gcMap.fillRect( (forwardStartPoint[0]-1 + N)*dotsize, (forwardStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
+				gcDotplot.fillRect( (forwardStartPoint[0]-1 + N)*dotsize, (forwardStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
 			}
 		}
 		if(reverseSequenceLength > 0) {
-			gcMap.setFill(Color.RED);
+			gcDotplot.setFill(Color.RED);
 
 			for(int N = 0; N < reverseSequenceLength; N++) {
-				gcMap.fillRect( (reverseStartPoint[0]-1 - N)*dotsize, (reverseStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
+				gcDotplot.fillRect( (reverseStartPoint[0]-1 - N)*dotsize, (reverseStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
 			}
 		}
 	}
@@ -559,12 +471,15 @@ public class Controller2 implements Initializable {
 		MousePreX = MouseX;
 		MousePreY = MouseY;
 
-		this.clearCanvas(gcMap);
 		aff.appendTranslation(MouseDeltaX,MouseDeltaY);
 
-		gcMap.setTransform(aff);
-		this.drawDotplot();
-		this.HighlightSelectedDotSequence();
+//		gcDotplot.setTransform(aff);
+		cvDotplotDrawer.setAffine(aff);
+
+		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+//		this.clearCanvas(gcDotplot);
+//		this.drawDotplot();
+		this.highlightSelectedDotSequence();
 
 		drag = true;
 	}
@@ -573,15 +488,12 @@ public class Controller2 implements Initializable {
 	protected void cvMapScroll(ScrollEvent e) {
 	//TODO 四隅の余白部分が均等になるように縮小されるよう修正しないといけない。
 
-		this.clearCanvas(gcMap);
-//		gc.setTransform(aff);
 		scale = e.getDeltaY() >=0 ? 1.05 : 1/1.05;
 		aff.appendScale(scale, scale, (int)Math.ceil((MouseX - aff.getTx() ) / (dotsize * aff.getMxx()) ), (int)Math.ceil((MouseX - aff.getTy() ) / (dotsize * aff.getMyy()) ));
-//		aff.append(scale, 0, (1-scale)*MouseX, 0, scale, (1-scale)*MouseY);
-		gcMap.setTransform(aff);
 
-		this.drawDotplot();
-		this.HighlightSelectedDotSequence();
+		cvDotplotDrawer.setAffine(aff);
+		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+		this.highlightSelectedDotSequence();
 
 	}
 
@@ -599,10 +511,12 @@ public class Controller2 implements Initializable {
 
 			if (DotX > 0 && DotY > 0) {
 				this.SearchSequence();
-				this.clearCanvas(gcMap);
-				gcMap.setTransform(aff);
-				this.drawDotplot();
-				this.HighlightSelectedDotSequence();
+//				this.clearCanvas(gcDotplot);
+//				gcDotplot.setTransform(aff);
+//				this.drawDotplot();
+				cvDotplotDrawer.setAffine(aff);
+				cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+				this.highlightSelectedDotSequence();
 
 				taSelectedForwardSequence.setText(refseq.getSeqSubstring(forwardStartPoint[1], forwardSequenceLength));
 				taSelectedReverseSequence.setText(refseq.getSeqSubstring(reverseStartPoint[1], reverseSequenceLength));
@@ -668,147 +582,100 @@ public class Controller2 implements Initializable {
 		}
 	}
 
-//======================= Refseq viewer==================================
+//======================= Slider ==================================
+	private void initializeSliders() {
 
-	private void setReferenceSequenceString() {
-		//taReferenceSequence.setText("");
-		for(int n=0; n < refseq.getSequenceLength(); n++) {
-		//	taReferenceSequence.appendText(refseq.getSeqString().charAt(n) + CRLF);
+		//波形の位置変更のスライダーの設定
+		initializePositionSlider(sliderTopPosition, seqTop, topDrawInterval, cvTopDrawer);
+		initializePositionSlider(sliderLeftPosition, seqLeft, leftDrawInterval, cvLeftDrawer);
+
+		//波形倍率変更スライドの設定
+		sliderTopScale.setVisible(true);
+		sliderLeftScale.setVisible(true);
+
+		//波形倍率テキストボックスの設定
+		tfTopZoom.setText(String.valueOf(topDrawScale));
+		tfTopZoom.setVisible(true);
+
+		tfLeftZoom.setText(String.valueOf(leftDrawScale));
+		tfLeftZoom.setVisible(true);
+
+	}
+
+	private void initializePositionSlider(Slider sld, SequenceMaster seq, int interval, SequenceCanvasDrawer scd) {
+
+		sld.setMax(getSliderMaxValue(seq, sld, interval, scd));
+		sld.valueProperty().addListener( (a, b, c) -> this.slidePosition(sld, scd) );
+		sld.setVisible(true);
+	}
+
+	private double getSliderMaxValue(SequenceMaster seq, Slider sld, int interval, SequenceCanvasDrawer scd) {
+		double max = 0;
+
+		switch( seq.getDataType() ) {
+		case SequenceMaster.typeAb1:
+			max = Math.floor( (seq.ab1Seq.getBasecalls()[seq.ab1Seq.getSequenceLength()-1] - sld.getWidth()) / interval);
+			break;
+		case SequenceMaster.typeFasta:
+			max = Math.floor( (seq.getSequenceLength() - sld.getWidth() * scd.getTextInterval() ) / interval);
+			break;
 		}
+
+		return max;
 	}
 
-//======================== Sample wave viewer ===========================
+	private void slidePosition(Slider sld, SequenceCanvasDrawer scd) {
+		scd.updateSeqCanvas( (int)Math.round(sld.getValue()) );
 
+//		this.clearCanvas(gcDotplot);
+//		this.drawDotplot();
+		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+		this.highlightSelectedDotSequence();
 
-
-	private void sliderTopPositionSlide(int start) {
-		sliderTopValue = (int)Math.round(sliderTopPosition.getValue());
-//		sliderTopValue = start;
-		this.clearCanvas(gcMap);
-		this.drawDotplot();
-		this.HighlightSelectedDotSequence();
-		cvTopDrawer.drawSeqCanvas(sliderTopValue);
 	}
 
-	private void sliderLeftPositionSlide(int start) {
-		sliderLeftValue = (int)Math.round(sliderLeftPosition.getValue());
-//		sliderLeftValue = start;
-		this.clearCanvas(gcMap);
-		this.drawDotplot();
-		this.HighlightSelectedDotSequence();
-		cvLeftDrawer.drawSeqCanvas(sliderLeftValue);
+	private void slideScale(Slider sld, TextField tf, SequenceCanvasDrawer cvd) {
+		double scale = sld.getValue();
+		tf.setText(String.format("%1$.1f", scale));
+		cvd.setDrawScale(scale);
+		cvd.updateSeqCanvas();
 	}
 
-	private void sliderTopScaleSlide() {
-		topDrawScale = sliderTopScale.getValue();
-		tfTopZoom.setText(String.format("%1$.1f", topDrawScale));
-		this.drawSeqCanvas(sliderTopValue, gcTop);
-	}
-
-
-	//TODO TopとLeftの操作はまとめたほうが良いと思う。
 	@FXML
 	protected void tfTopZoomKeyPressed(KeyEvent e) {
-		double scale;
-
 		if(e.getCode() == KeyCode.ENTER) {
-
-			try {
-				scale = Double.parseDouble(tfTopZoom.getText());
-
-				if(WAVE_SCALE_MIN <= scale && scale <= WAVE_SCALE_MAX) {
-					topDrawScale = scale;
-					sliderTopScale.setValue(scale);
-					this.drawSeqCanvas(sliderTopValue, gcTop);
-				}else {
-					alertDialog = new Alert(AlertType.INFORMATION);
-					alertDialog.setTitle("Zoom value is out of range.");
-					alertDialog.setHeaderText(null);
-					alertDialog.setContentText("Zoom value should be between " + WAVE_SCALE_MIN + " to " + WAVE_SCALE_MAX + ".");
-					alertDialog.show();
-				}
-			}catch(NumberFormatException exception) {
-				alertDialog = new Alert(AlertType.INFORMATION);
-				alertDialog.setTitle("Invalid number");
-				alertDialog.setHeaderText(null);
-				alertDialog.setContentText("Zoom value is not number.");
-				alertDialog.show();
-			}
+			this.tfZoom(tfTopZoom, sliderTopScale, cvTopDrawer);
 		}
 	}
 
 	@FXML
 	protected void tfLeftZoomKeyPressed(KeyEvent e) {
-		double scale;
-
 		if(e.getCode() == KeyCode.ENTER) {
-
-			try {
-				scale = Double.parseDouble(tfLeftZoom.getText());
-
-				if(WAVE_SCALE_MIN <= scale && scale <= WAVE_SCALE_MAX) {
-					leftDrawScale = scale;
-					sliderLeftScale.setValue(scale);
-					this.drawSeqCanvas(sliderTopValue, gcLeft);
-				}else {
-					alertDialog = new Alert(AlertType.INFORMATION);
-					alertDialog.setTitle("Zoom value is out of range.");
-					alertDialog.setHeaderText(null);
-					alertDialog.setContentText("Zoom value should be between " + WAVE_SCALE_MIN + " to " + WAVE_SCALE_MAX + ".");
-					alertDialog.show();
-				}
-			}catch(NumberFormatException exception) {
-				alertDialog = new Alert(AlertType.INFORMATION);
-				alertDialog.setTitle("Invalid number");
-				alertDialog.setHeaderText(null);
-				alertDialog.setContentText("Zoom value is not number.");
-				alertDialog.show();
-			}
+			this.tfZoom(tfLeftZoom, sliderLeftScale, cvLeftDrawer);
 		}
 	}
 
-	private void calculateRangeOfDrawedBase(int[] basecall, int start, int end) {
+	private void tfZoom(TextField tf, Slider sld, SequenceCanvasDrawer scd) {
+		try {
+			scale = Double.parseDouble(tf.getText());
 
-		if(seqTop.getDataType() == SequenceMaster.typeAb1) {
-			if( start <= basecall[0] ) {
-				topDrawedBaseStart = 0;
+			if(WAVE_SCALE_MIN <= scale && scale <= WAVE_SCALE_MAX) {
+				sld.setValue(scale);
+				scd.setDrawScale(scale);
+				scd.updateSeqCanvas();
 			}else {
-				for(int m = 1; m < basecall.length; m++) {
-					if(basecall[m-1] < start && start <= basecall[m]) {
-						topDrawedBaseStart = m;
-					}
-				}
+				alertDialog = new Alert(AlertType.INFORMATION);
+				alertDialog.setTitle("Zoom value is out of range.");
+				alertDialog.setHeaderText(null);
+				alertDialog.setContentText("Zoom value should be between " + WAVE_SCALE_MIN + " to " + WAVE_SCALE_MAX + ".");
+				alertDialog.show();
 			}
-
-			if( basecall[basecall.length - 1] <= end ) {
-				topDrawedBaseEnd = basecall.length - 1;
-			}else {
-				for(int m = topDrawedBaseStart; m < basecall.length - 1; m++) {
-					if(basecall[m] <= end && end < basecall[m+1]) {
-						topDrawedBaseEnd = m;
-					}
-				}
-			}
-		}
-
-		if( start <= basecall[0] ) {
-			topDrawedBaseStart = 0;
-		}else {
-			for(int m = 1; m < basecall.length; m++) {
-				if(basecall[m-1] < start && start <= basecall[m]) {
-					topDrawedBaseStart = m;
-				}
-			}
-		}
-
-		if( basecall[basecall.length - 1] <= end ) {
-			topDrawedBaseEnd = basecall.length - 1;
-		}else {
-			for(int m = topDrawedBaseStart; m < basecall.length - 1; m++) {
-				if(basecall[m] <= end && end < basecall[m+1]) {
-					topDrawedBaseEnd = m;
-				}
-			}
+		}catch(NumberFormatException exception) {
+			alertDialog = new Alert(AlertType.INFORMATION);
+			alertDialog.setTitle("Invalid number");
+			alertDialog.setHeaderText(null);
+			alertDialog.setContentText("Zoom value is not number.");
+			alertDialog.show();
 		}
 	}
 
@@ -816,25 +683,18 @@ public class Controller2 implements Initializable {
 
 	@FXML
 	protected void checkRevcomClick() {
-		this.clearCanvas(gcMap);
-		this.drawDotplot();
+//		this.clearCanvas(gcDotplot);
+//		this.drawDotplot();
+		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
 	}
 
 //===================== For debug or etc. ==========================
 
 	@Override
 	public void initialize(URL location, ResourceBundle rb) {
-		gcMap  = cvMap.getGraphicsContext2D();
+		gcDotplot  = cvDotplot.getGraphicsContext2D();
 		gcTop  = cvTop.getGraphicsContext2D();
 		gcLeft = cvLeft.getGraphicsContext2D();
-
-		cvMapHeight = cvMap.getHeight();
-		cvMapWidth = cvMap.getWidth();
-
-		cvTopHeight = (int)Math.floor(cvTop.getHeight());
-		cvTopWidth = (int)Math.floor(cvTop.getWidth());
-		cvLeftHeight = (int)Math.floor(cvLeft.getHeight());
-		cvLeftWidth = (int)Math.floor(cvLeft.getWidth());
 
 		tfTopZoom.setVisible(false);
 		tfLeftZoom.setVisible(false);
@@ -845,22 +705,16 @@ public class Controller2 implements Initializable {
 		sliderTopScale.setValue(topDrawScale);
 		sliderTopScale.setMin(WAVE_SCALE_MIN);
 		sliderTopScale.setMax(WAVE_SCALE_MAX);
-		sliderTopScale.valueProperty().addListener((a, b, c) -> this.sliderTopScaleSlide());
+		sliderTopScale.valueProperty().addListener((a, b, c) -> this.slideScale(sliderTopScale, tfTopZoom, cvTopDrawer));
 		sliderTopScale.setVisible(false);
 
 		sliderLeftScale.setValue(leftDrawScale);
 		sliderLeftScale.setMin(WAVE_SCALE_MIN);
 		sliderLeftScale.setMax(WAVE_SCALE_MAX);
-		sliderLeftScale.valueProperty().addListener((a, b, c) -> this.sliderTopScaleSlide());
+		sliderLeftScale.valueProperty().addListener((a, b, c) -> this.slideScale(sliderLeftScale, tfLeftZoom, cvLeftDrawer));
 		sliderLeftScale.setVisible(false);
 
-		clearCanvas(gcMap);
-		clearCanvas(gcTop);
-		clearCanvas(gcLeft);
-
 		taLog.appendText("Initialization finished."+CRLF);
-
-		//taReferenceSequence.setEditable(false);
 
 		gcTop.setFont(new Font("Arial", 12));
 

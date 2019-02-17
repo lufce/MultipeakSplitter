@@ -16,14 +16,6 @@ public class CanvasDrawer {
 	protected void clearCanvas() {
 
 		gc.setFill(Color.WHITE);
-
-//		Revcomのときに色を変えるかどうか。
-//		if(this.checkRevcom.isSelected() && gc.equals(gcMap)) {
-//			gc.setFill(Color.BLACK);
-//		}else {
-//			gc.setFill(Color.WHITE);
-//		}
-
 		gc.setTransform(IDENTITY_TRANSFORM);
 		gc.fillRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
 	}

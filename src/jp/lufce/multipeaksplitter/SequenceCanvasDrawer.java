@@ -8,11 +8,13 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 	private int drawableRange;
 	private boolean isLeftCanvas = false;
 
+	private int sequenceStartIndex = -1;
+	private int sequenceEndIndex = -1;
 	private int basecallStart;
-	private int basecallEnd;
+//	private int basecallEnd;
 
 	private int drawInterval = 1;
-	private int drawScale = 1;
+	private double drawScale = 1.0;
 
 	final private Color[] BASE_COLOR = {Color.RED, Color.GREEN, Color.ORANGE, Color.BLACK};
 	final private String[] BASE = {"A","C","G","T"};
@@ -32,23 +34,31 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 		}
 	}
 
-	public void setDrawScale(int scale) {
+	public void setDrawScale(double scale) {
 		drawScale = scale;
 	}
 
-	public void drawSeqCanvas(int start) {
-		//TODO RevComに対応させる
-		//TODO seqCanvasを描画する入り口。ab1_seq, fasta_seq両方描画できるようにする。
+	public int getTextInterval() {
+		return this.TEXT_INTERVAL;
+	}
 
-		/*
-		 * ab1_seqを受け取ったときと、fasta_seqを受け取ったときの挙動の違いは？
-		 * →ab1、波形と文字の両方を描画
-		 * →fasta 文字だけ描画
-		 * topとleftの違いは？
-		 * →topはそのまま描画。leftは左右反転させて反時計回りに90度回転
-		 * 1. GraphicsContextsを引数として受け取るように変更。
-		 * 2.
-		 */
+	public int getDrawnStartIndex() {
+		return this.sequenceStartIndex;
+	}
+
+	public int getDrawnEndIndex() {
+		return this.sequenceEndIndex;
+	}
+
+	public int getSequenceLength() {
+		return seq.getSequenceLength();
+	}
+
+	public int getDrawnSequenceLength() {
+		return sequenceEndIndex - sequenceStartIndex + 1;
+	}
+
+	public void updateSeqCanvas(int start) {
 
 		super.clearCanvas();
 
@@ -58,19 +68,34 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 			break;
 		case SequenceMaster.typeAb1:
 			drawSeqWaveAndText(start);
+			this.basecallStart = start;
+			break;
+		}
+	}
+
+	public void updateSeqCanvas() {
+
+		super.clearCanvas();
+
+		switch(seq.getDataType()) {
+		case SequenceMaster.typeFasta:
+			drawSeqText(this.sequenceStartIndex);
+			break;
+		case SequenceMaster.typeAb1:
+			drawSeqWaveAndText(this.basecallStart);
 			break;
 		}
 	}
 
 	private void drawSeqWaveAndText(int start) {
 
-		basecallStart = start;
-		basecallEnd = basecallStart + drawableRange * drawInterval;
+		int basecallStart = start;
+		int basecallEnd = basecallStart + drawableRange * drawInterval;
 
 		double localMax = seq.ab1Seq.getLocalMaxIntensity(basecallStart, basecallEnd);
 		boolean[][] map = seq.ab1Seq.getMap();
 		int[] basecall = seq.ab1Seq.getBasecalls();
-		int pointer = basecallStart;
+		int pointer = this.searchSequenceStartIndex(basecall, start, sequenceStartIndex);
 		double[][] drawIntensity = this.convertDrawIntensity(seq.ab1Seq.getSubarrayMultiAllIntensity(basecallStart, basecallEnd), localMax);
 
 		gc.setLineWidth(WAVELINE_WIDTH);
@@ -86,7 +111,7 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 				}
 			}
 
-			if(basecall[pointer] == m + basecallStart) {
+			if(basecallStart < basecall[basecall.length-1] && basecall[pointer] == m + basecallStart) {
 				for(int n = 0; n < 4; n++) {
 					if(map[n][pointer]) {
 						gc.setFill(BASE_COLOR[n]);
@@ -102,14 +127,57 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 				pointer++;
 			}
 		}
+
+		//描画範囲の最後のインデックスを取得
+		sequenceEndIndex = pointer - 1;
+	}
+
+	private int searchSequenceStartIndex(int[] basecall, int start, int previousIndex) {
+		//TODO 毎回0から探すのは無駄。
+
+		if(previousIndex == -1) {
+			//sequenceStartIndexが初期状態なら0から探し始める。
+			for(int n = 0; n < basecall.length; n++) {
+				if(basecall[n] > start) {
+					sequenceStartIndex = n;
+					break;
+				}
+			}
+		}else {
+			//sequenceStartIndexがすでに更新されているのなら、そこから探し始める。
+
+			if(basecall[previousIndex] > start) {
+				//前回のindexでのbasecallの値が、すでにstartを越えているなら、0に向かって探索。
+
+				for(int n = previousIndex; n >= 0; n--) {
+					if(basecall[n] < start) {
+						sequenceStartIndex = n + 1;
+						break;
+					}
+				}
+			}else {
+				//前回のindexからbasecallの最後に向かって探索
+
+				for(int n = previousIndex; n < basecall.length; n++) {
+					if(basecall[n] > start) {
+						sequenceStartIndex = n;
+						break;
+					}
+				}
+			}
+		}
+
+		return sequenceStartIndex;
 	}
 
 	private void drawSeqText(int start) {
 		boolean[][] map = seq.fastaSeq.getMap();
+		sequenceStartIndex = start;
+		sequenceEndIndex = start + drawableRange / TEXT_INTERVAL;
 
-		for(int m = start; m < drawableRange / TEXT_INTERVAL; m++) {
+		for(int m = 0; m < drawableRange / TEXT_INTERVAL; m++) {
 			for(int n = 0; n < 4; n++) {
-				if(map[n][m]) {
+				if(map[n][start + m]) {
 					gc.setFill(BASE_COLOR[n]);
 
 					if(isLeftCanvas) {
@@ -120,6 +188,7 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 				}
 			}
 		}
+
 	}
 
 	private double[][] convertDrawIntensity(int[][] intensity, double localMax){
