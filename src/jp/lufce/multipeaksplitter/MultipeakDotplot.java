@@ -3,6 +3,7 @@ package jp.lufce.multipeaksplitter;
 public class MultipeakDotplot {
 	//TODO get系のFunctionで、makeDotplot前の例外をつくらないといけない
 	//TODO これってstaticでいいのでは。
+	//TODO もしseqTopとseqLeftの両方が波形データだった場合、どういうふうにDotplotを作ると良いのだろうか。
 
 	private boolean[][] rawDotplot, windowedDotplot, maxWindowedDotplot;
 

@@ -13,7 +13,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -23,32 +22,22 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import javafx.scene.transform.Affine;
 import javafx.stage.FileChooser;
 
 public class Controller2 implements Initializable {
 	//TODO ReveseComplementにチェックを入れたときの描画とかマウスクリック時の処理を完成させる。
 
-
 	final private String CRLF = System.getProperty("line.separator");
-//	final private double GRID_LINE_WIDTH = 0.025;
 	final private double WAVE_SCALE_MAX = 20;
 	final private double WAVE_SCALE_MIN = 0.2;
 	final private double WAVE_SCALE_DEFAULT = 1;
-//	final private double WAVELINE_WIDTH = 0.5;
-//	final private Color[] BASE_COLOR = {Color.RED, Color.GREEN, Color.ORANGE, Color.BLACK};
-//	final private String[] BASE = {"A","C","G","T"};
-	// The index 0 to 3 associates with A, C, G, and T, respectively.
 
 	private Alert alertDialog;
 
 	//File I/O
 	private File lastChosenFile = null;
 	private FileChooser fileChooser = new FileChooser();
-	//private File sampleFile;
-	//private File referenceFile;
 
 	private MultipeakDotplot[] dotplot = new MultipeakDotplot[4];
 	/* Index   Top     Left
@@ -57,10 +46,6 @@ public class Controller2 implements Initializable {
 	 * 2:      -       Revcom
 	 * 3:      Revcom  Revcom
 	 */
-
-	private MultipeakDotplot dotplotRevCom;
-	private Ab1Sequence sample;		//あとで消す
-	private FastaSequence refseq;	//あとで消す
 
 	private SequenceMaster seqTop;
 	private SequenceMaster seqLeft;
@@ -108,53 +93,17 @@ public class Controller2 implements Initializable {
 	@FXML protected Slider sliderLeftScale;
 	@FXML protected TextField tfTopZoom;
 	@FXML protected TextField tfLeftZoom;
-//	private int sliderTopValue;
-//	private int sliderLeftValue;
 	private GraphicsContext gcTop;
 	private GraphicsContext gcLeft;
 
-//	private int cvTopHeight;
-//	private int cvTopWidth;
-//	private int topDrawedBaseStart = 0;
-//	private int topDrawedBaseEnd = 0;
-//	private int topWaveStart;
-//	private int topWaveEnd;
-//	private int cvLeftHeight;
-//	private int cvLeftWidth;
-//	private int leftDrawedBaseStart = 0;
-//	private int leftDrawedBaseEnd = 0;
-//	private int leftWaveStart;
-//	private int leftWaveEnd;
-
-	//private int[][] multiIntensity;
 	private int topDrawInterval = 1;
 	private int leftDrawInterval = 1;
 	private double topDrawScale = WAVE_SCALE_DEFAULT;
 	private double leftDrawScale = WAVE_SCALE_DEFAULT;
 
-	private boolean[][] drawnDotplot;
-	private int dotsize = 1;	//多分消せる
 	private double scale = 1.0;
 
-	private double MouseX;
-	private double MouseY;
-	private double MousePreX;
-	private double MousePreY;
-	private double MouseDeltaX;
-	private double MouseDeltaY;
-
-	private int DotX;
-	private int DotY;
-	private int forwardSequenceLength = 0;
-	private int[] forwardStartPoint = new int[2];
-	private int reverseSequenceLength = 0;
-	private int[] reverseStartPoint = new int[2];
-
 	private boolean drag = false;
-
-	private Affine aff = new Affine();
-	private static final Affine IDENTITY_TRANSFORM = new Affine(1f,0f,0f,0f,1f,0);
-
 
 //========================== File input =============================
 
@@ -191,7 +140,7 @@ public class Controller2 implements Initializable {
 
 		//ハイライトが行われているならそれも更新
 		if(highlighting == true) {
-			this.highlightSelectedDotSequence();
+			cvDotplotDrawer.highlightSelectedDotSequence();
 		}
 	}
 
@@ -205,11 +154,6 @@ public class Controller2 implements Initializable {
 
 		try {
 
-			//ab1配列オブジェクトとRefSeq配列オブジェクトを生成
-			//sample = new Ab1Sequence(new File(taTopPath.getText()));
-			//refseq = new TextSequence(new File(taLeftPath.getText()));
-
-			//TODO SequenceMasterを使ってみる
 			seqTop  = new SequenceMaster(new File(taTopPath.getText()));
 			seqLeft = new SequenceMaster(new File(taLeftPath.getText()));
 
@@ -241,10 +185,6 @@ public class Controller2 implements Initializable {
 
 			//ファイル入出力のタブからシークエンス処理のタブに表示を切り替え
 			tabPane1.getSelectionModel().select(tabSequence);
-
-			//選択された配列の長さを表す変数の初期化（ここで必要？）
-			forwardSequenceLength = 0;
-			reverseSequenceLength = 0;
 
 			taLog.appendText("make dotplot finished"+CRLF);
 
@@ -325,7 +265,6 @@ public class Controller2 implements Initializable {
 
 	@FXML
 	protected void bResetViewClick() {
-		aff = this.IDENTITY_TRANSFORM.clone();
 		cvDotplotDrawer.resetAffine();
 		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvTopDrawer);
 	}
@@ -427,158 +366,81 @@ public class Controller2 implements Initializable {
 		}
 	}
 
-	private void highlightSelectedDotSequence() {
-		if(forwardSequenceLength > 0) {
-			gcDotplot.setFill(Color.RED);
-
-			for(int N = 0; N < forwardSequenceLength; N++) {
-				gcDotplot.fillRect( (forwardStartPoint[0]-1 + N)*dotsize, (forwardStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
-			}
-		}
-		if(reverseSequenceLength > 0) {
-			gcDotplot.setFill(Color.RED);
-
-			for(int N = 0; N < reverseSequenceLength; N++) {
-				gcDotplot.fillRect( (reverseStartPoint[0]-1 - N)*dotsize, (reverseStartPoint[1]-1 + N)*dotsize, dotsize, dotsize);
-			}
-		}
-	}
-
 //======================= Mouse-action to move the dotmap position ===============================
 
 	@FXML
 	protected void cvMapMouseMoved(MouseEvent e) {
-		MouseX = e.getX();
-		MouseY = e.getY();
+		//ドラッグ操作には必要ないが、スクロール操作には必要。
+		if(cvDotplotDrawer != null) {
+			cvDotplotDrawer.setMouse(e.getX(), e.getY());
+		}
 	}
 
 	@FXML
 	protected void cvMapMousePressed(MouseEvent e) {
-		MousePreX = e.getX();
-		MousePreY = e.getY();
-
-		taLog.setText("x: "+ MousePreX + "  y: "+ MousePreY);
+		if(cvDotplotDrawer != null) {
+			cvDotplotDrawer.setMousePre(e.getX(), e.getY());
+		}
 	}
 
 	@FXML
 	protected void cvMapMouseDragged(MouseEvent e) {
-		MouseX = e.getX();
-		MouseY = e.getY();
+		if(cvDotplotDrawer != null) {
+			cvDotplotDrawer.mouseDragged(e.getX(), e.getY());
+			cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+			cvDotplotDrawer.highlightSelectedDotSequence();
 
-		MouseDeltaX = (MouseX-MousePreX) / aff.getMxx();
-		MouseDeltaY = (MouseY-MousePreY) / aff.getMxx();
-
-		MousePreX = MouseX;
-		MousePreY = MouseY;
-
-		aff.appendTranslation(MouseDeltaX,MouseDeltaY);
-
-//		gcDotplot.setTransform(aff);
-		cvDotplotDrawer.setAffine(aff);
-
-		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-//		this.clearCanvas(gcDotplot);
-//		this.drawDotplot();
-		this.highlightSelectedDotSequence();
-
-		drag = true;
+			drag = true;
+		}
 	}
 
 	@FXML
 	protected void cvMapScroll(ScrollEvent e) {
 	//TODO 四隅の余白部分が均等になるように縮小されるよう修正しないといけない。
-
-		scale = e.getDeltaY() >=0 ? 1.05 : 1/1.05;
-		aff.appendScale(scale, scale, (int)Math.ceil((MouseX - aff.getTx() ) / (dotsize * aff.getMxx()) ), (int)Math.ceil((MouseX - aff.getTy() ) / (dotsize * aff.getMyy()) ));
-
-		cvDotplotDrawer.setAffine(aff);
-		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-		this.highlightSelectedDotSequence();
-
+		if(cvDotplotDrawer != null) {
+			cvDotplotDrawer.mouseScroll(e.getDeltaY());
+			cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+			cvDotplotDrawer.highlightSelectedDotSequence();
+		}
 	}
 
 //======================== For extraction of selected sequence =======================
 
 	@FXML
 	protected void cvMapMouseClicked(MouseEvent e) {
-		if(drag == false) {
+		String fwSeq = "", rvSeq = "";
+		int fwStart = 0, fwLength =0, rvStart = 0, rvLength = 0;
 
-			double ClickX = e.getX();
-			double ClickY = e.getY();
+		if(cvDotplotDrawer != null) {
+			if(drag == false) {
 
-			DotX = (int)Math.ceil((ClickX - aff.getTx() ) / (dotsize * aff.getMxx()) );
-			DotY = (int)Math.ceil((ClickY - aff.getTy() ) / (dotsize * aff.getMxx()) );
+				if ( cvDotplotDrawer.clickDot(e.getX(), e.getY()) ) {
 
-			if (DotX > 0 && DotY > 0) {
-				this.SearchSequence();
-//				this.clearCanvas(gcDotplot);
-//				gcDotplot.setTransform(aff);
-//				this.drawDotplot();
-				cvDotplotDrawer.setAffine(aff);
-				cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-				this.highlightSelectedDotSequence();
+					fwStart  = cvDotplotDrawer.getForwardStart();
+					fwLength = cvDotplotDrawer.getForwardSequenceLength();
+					rvStart  = cvDotplotDrawer.getReverseStart();
+					rvLength = cvDotplotDrawer.getReverseSequenceLength();
 
-				taSelectedForwardSequence.setText(refseq.getSeqSubstring(forwardStartPoint[1], forwardSequenceLength));
-				taSelectedReverseSequence.setText(refseq.getSeqSubstring(reverseStartPoint[1], reverseSequenceLength));
+					cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+					cvDotplotDrawer.highlightSelectedDotSequence();
 
-				tfForwardIntercept.setText(Integer.toString(DotY - DotX));
-				tfReverseIntercept.setText(Integer.toString(DotY + DotX));
+					if(seqTop.getDataType() == SequenceMaster.typeFasta) {
+						fwSeq = seqTop.fastaSeq.getSeqSubstring(fwStart, fwLength);
+						rvSeq = seqTop.fastaSeq.getSeqSubstring(rvStart, rvLength);
+					}else if(seqLeft.getDataType() == SequenceMaster.typeFasta) {
+						fwSeq = seqLeft.fastaSeq.getSeqSubstring(fwStart, fwLength);
+						rvSeq = seqLeft.fastaSeq.getSeqSubstring(rvStart, rvLength);
+					}
+
+					taSelectedForwardSequence.setText(fwSeq.toUpperCase());
+					taSelectedReverseSequence.setText(rvSeq.toUpperCase());
+
+					tfForwardIntercept.setText(Integer.toString(cvDotplotDrawer.getForwardInterception()));
+					tfReverseIntercept.setText(Integer.toString(cvDotplotDrawer.getReverseInterception()));
+				}
+			}else {
+				drag = false;
 			}
-		}else {
-			drag = false;
-		}
-	}
-
-	private void SearchSequence() {
-		forwardSequenceLength = 0;
-		reverseSequenceLength = 0;
-
-		int X = DotX - 1;
-		int Y = DotY - 1;
-
-		if(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y]) {
-			while(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y] ) {
-				forwardSequenceLength++;
-				X--;
-				Y--;
-			}
-
-			forwardStartPoint[0] = X + 2;
-			forwardStartPoint[1] = Y + 2;
-
-			X = DotX;
-			Y = DotY;
-
-			while(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y]) {
-				forwardSequenceLength++;
-				X++;
-				Y++;
-			}
-
-			X = DotX - 1;
-			Y = DotY - 1;
-
-			while(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y]) {
-				reverseSequenceLength++;
-				X++;
-				Y--;
-			}
-
-			reverseStartPoint[0] = X;
-			reverseStartPoint[1] = Y + 2;
-
-			X = DotX - 2;
-			Y = DotY;
-
-			while(X >= 0 && X < drawnDotplot.length && Y >= 0 && Y < drawnDotplot[0].length && drawnDotplot[X][Y]) {
-				reverseSequenceLength++;
-				X--;
-				Y++;
-			}
-
-		}else {
-			forwardSequenceLength = 0;
-			reverseSequenceLength = 0;
 		}
 	}
 
@@ -630,7 +492,7 @@ public class Controller2 implements Initializable {
 //		this.clearCanvas(gcDotplot);
 //		this.drawDotplot();
 		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-		this.highlightSelectedDotSequence();
+		cvDotplotDrawer.highlightSelectedDotSequence();
 
 	}
 
