@@ -8,12 +8,18 @@ import org.biojava.bio.seq.DNATools;
 
 public class Ab1Sequence extends ABITrace {
 
+	private boolean[][] workingMap;
+	private int[][] workingIntensity;
+	private int[][] workingBasecall;
+
 	private boolean[][] map;
 	private boolean[][] revcomMap;
 	private int[][] multiBasecallIntensity;
 	private int[][] multiAllIntensity;
 	private int[][] revcomMultiBasecallIntensity;
 	private int[][] revcomMultiAllIntensity;
+
+	private boolean isRevcom = false;
 
 	final private int A = 0;
 	final private int C = 1;
@@ -66,6 +72,9 @@ public class Ab1Sequence extends ABITrace {
 			//maxpeakの初期化
 			maxpeak = 0;
 		}
+
+		//isRevcomフラグに基づいて、必要とされている(Workingの)情報を登録
+		this.setWorkings();
 	}
 
 	public boolean[][] getMap(){
@@ -76,21 +85,33 @@ public class Ab1Sequence extends ABITrace {
 		return revcomMap;
 	}
 
+	public boolean[][] getWorkingMap(){
+		return this.workingMap;
+	}
+
 	public int[][] getMultiBasecallIntensity(){
-		return multiBasecallIntensity;
+		return this.workingBasecall;
 	}
 
 	public int[][] getMultiAllIntensity(){
-		return multiAllIntensity;
+		return this.workingIntensity;
 	}
 
-	public int[][] getRevcomMultiBasecallIntensity(){
-		return revcomMultiBasecallIntensity;
-	}
-
-	public int[][] getRevcomMultiAllIntensity(){
-		return revcomMultiAllIntensity;
-	}
+//	public int[][] getMultiBasecallIntensity(){
+//		return multiBasecallIntensity;
+//	}
+//
+//	public int[][] getMultiAllIntensity(){
+//		return multiAllIntensity;
+//	}
+//
+//	public int[][] getRevcomMultiBasecallIntensity(){
+//		return revcomMultiBasecallIntensity;
+//	}
+//
+//	public int[][] getRevcomMultiAllIntensity(){
+//		return revcomMultiAllIntensity;
+//	}
 
 	public double getLocalMaxIntensity(int start, int end) {
 		double localMax = Double.MIN_VALUE;
@@ -141,6 +162,9 @@ public class Ab1Sequence extends ABITrace {
 		//各塩基ごとのベースコール座標でのトレースデータを含んだ二次元配列を返す
 		//第一index 0:A 1:C 2:G 3:T
 
+		int seqLength   = super.getSequenceLength();
+		int traceLength = super.getTraceLength();
+
 		try {
 			int[] basecall = super.getBasecalls();
 
@@ -149,20 +173,23 @@ public class Ab1Sequence extends ABITrace {
 			multiAllIntensity[G] = super.getTrace(DNATools.g());
 			multiAllIntensity[T] = super.getTrace(DNATools.t());
 
-			for(int n = 0; n < super.getTraceLength(); n++) {
-
+			for(int n = 0; n < traceLength; n++) {
+				revcomMultiAllIntensity[T][n] = multiAllIntensity[A][traceLength - n - 1];
+				revcomMultiAllIntensity[G][n] = multiAllIntensity[C][traceLength - n - 1];
+				revcomMultiAllIntensity[C][n] = multiAllIntensity[G][traceLength - n - 1];
+				revcomMultiAllIntensity[A][n] = multiAllIntensity[T][traceLength - n - 1];
 			}
 
-			for(int n = 0; n < super.getSequenceLength(); n++) {
+			for(int n = 0; n < seqLength; n++) {
 				multiBasecallIntensity[A][n] = multiAllIntensity[A][basecall[n]];
 				multiBasecallIntensity[C][n] = multiAllIntensity[C][basecall[n]];
 				multiBasecallIntensity[G][n] = multiAllIntensity[G][basecall[n]];
 				multiBasecallIntensity[T][n] = multiAllIntensity[T][basecall[n]];
 
-				revcomMultiBasecallIntensity[T][super.getSequenceLength() - 1 - n] = multiAllIntensity[A][basecall[n]];
-				revcomMultiBasecallIntensity[G][super.getSequenceLength() - 1 - n] = multiAllIntensity[C][basecall[n]];
-				revcomMultiBasecallIntensity[C][super.getSequenceLength() - 1 - n] = multiAllIntensity[G][basecall[n]];
-				revcomMultiBasecallIntensity[A][super.getSequenceLength() - 1 - n] = multiAllIntensity[T][basecall[n]];
+				revcomMultiBasecallIntensity[T][seqLength - 1 - n] = multiAllIntensity[A][basecall[n]];
+				revcomMultiBasecallIntensity[G][seqLength - 1 - n] = multiAllIntensity[C][basecall[n]];
+				revcomMultiBasecallIntensity[C][seqLength - 1 - n] = multiAllIntensity[G][basecall[n]];
+				revcomMultiBasecallIntensity[A][seqLength - 1 - n] = multiAllIntensity[T][basecall[n]];
 
 			}
 		}catch(Exception e) {
@@ -170,8 +197,20 @@ public class Ab1Sequence extends ABITrace {
 		}
 	}
 
-	public int getSequenceLength() {
-		return super.getSequenceLength();
+	public void setRevcom(boolean boo) {
+		this.isRevcom = boo;
+	}
+
+	private void setWorkings() {
+		if(this.isRevcom) {
+			this.workingBasecall  = this.revcomMultiBasecallIntensity;
+			this.workingIntensity = this.revcomMultiAllIntensity;
+			this.workingMap       = this.revcomMap;
+		}else {
+			this.workingBasecall  = this.multiBasecallIntensity;
+			this.workingIntensity = this.multiAllIntensity;
+			this.workingMap       = this.map;
+		}
 	}
 
 }

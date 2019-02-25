@@ -13,6 +13,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -73,9 +74,11 @@ public class Controller2 implements Initializable {
 	@FXML protected TextField tfThreshold;
 	@FXML protected Button bRemake;
 	@FXML protected Button bResetView;
-	@FXML protected CheckBox checkTopRevcom;
-	@FXML protected CheckBox checkLeftRevcom;
-	@FXML protected CheckBox checkMaximize;
+	@FXML protected CheckBox cbTopRevcom;
+	@FXML protected CheckBox cbLeftRevcom;
+	@FXML protected CheckBox cbMaximize;
+	@FXML protected CheckBox cbTopSplit;
+	@FXML protected CheckBox cbLeftSplit;
 	@FXML protected TextArea taSelectedForwardSequence;
 	@FXML protected TextArea taSelectedReverseSequence;
 	@FXML protected TextField tfForwardIntercept;
@@ -93,6 +96,8 @@ public class Controller2 implements Initializable {
 	@FXML protected Slider sliderLeftScale;
 	@FXML protected TextField tfTopZoom;
 	@FXML protected TextField tfLeftZoom;
+	@FXML protected Label lbTopZoom;
+	@FXML protected Label lbLeftZoom;
 	private GraphicsContext gcTop;
 	private GraphicsContext gcLeft;
 
@@ -182,6 +187,9 @@ public class Controller2 implements Initializable {
 
 			//スライダーの設定
 			this.initializeSliders();
+
+			//チェックボックスの設定
+			this.initializeCheckBoxes();
 
 			//ファイル入出力のタブからシークエンス処理のタブに表示を切り替え
 			tabPane1.getSelectionModel().select(tabSequence);
@@ -349,17 +357,17 @@ public class Controller2 implements Initializable {
 	private boolean[][] judgeDrawnDotplot(){
 		MultipeakDotplot selectedDotplot = null;
 
-		if      ( !this.checkTopRevcom.isSelected() && !this.checkTopRevcom.isSelected()) {
+		if      ( !this.cbTopRevcom.isSelected() && !this.cbLeftRevcom.isSelected()) {
 			selectedDotplot = dotplot[0];
-		}else if(  this.checkTopRevcom.isSelected() && !this.checkTopRevcom.isSelected()) {
+		}else if(  this.cbTopRevcom.isSelected() && !this.cbLeftRevcom.isSelected()) {
 			selectedDotplot = dotplot[1];
-		}else if( !this.checkTopRevcom.isSelected() &&  this.checkTopRevcom.isSelected()) {
+		}else if( !this.cbTopRevcom.isSelected() &&  this.cbLeftRevcom.isSelected()) {
 			selectedDotplot = dotplot[2];
-		}else if(  this.checkTopRevcom.isSelected() &&  this.checkTopRevcom.isSelected()) {
+		}else if(  this.cbTopRevcom.isSelected() &&  this.cbLeftRevcom.isSelected()) {
 			selectedDotplot = dotplot[3];
 		}
 
-		if(this.checkMaximize.isSelected()) {
+		if(this.cbMaximize.isSelected()) {
 			return selectedDotplot.getMaxWindowedDotPlot();
 		}else {
 			return selectedDotplot.getWindowedDotPlot();
@@ -451,17 +459,29 @@ public class Controller2 implements Initializable {
 		initializePositionSlider(sliderTopPosition, seqTop, topDrawInterval, cvTopDrawer);
 		initializePositionSlider(sliderLeftPosition, seqLeft, leftDrawInterval, cvLeftDrawer);
 
-		//波形倍率変更スライドの設定
-		sliderTopScale.setVisible(true);
-		sliderLeftScale.setVisible(true);
+		if(seqTop.getDataType() == SequenceMaster.typeAb1) {
+			lbTopZoom.setVisible(true);
+			sliderTopScale.setVisible(true);
+			tfTopZoom.setText(String.valueOf(topDrawScale));
+			tfTopZoom.setVisible(true);
+		}else if(seqTop.getDataType() == SequenceMaster.typeFasta) {
+			lbTopZoom.setVisible(false);
+			sliderLeftScale.setVisible(false);
+			tfTopZoom.setText(String.valueOf(topDrawScale));
+			tfTopZoom.setVisible(false);
+		}
 
-		//波形倍率テキストボックスの設定
-		tfTopZoom.setText(String.valueOf(topDrawScale));
-		tfTopZoom.setVisible(true);
-
-		tfLeftZoom.setText(String.valueOf(leftDrawScale));
-		tfLeftZoom.setVisible(true);
-
+		if(seqLeft.getDataType() == SequenceMaster.typeAb1) {
+			lbLeftZoom.setVisible(true);
+			sliderLeftScale.setVisible(true);
+			tfLeftZoom.setText(String.valueOf(leftDrawScale));
+			tfLeftZoom.setVisible(true);
+		}else if(seqLeft.getDataType() == SequenceMaster.typeFasta) {
+			lbLeftZoom.setVisible(false);
+			sliderLeftScale.setVisible(false);
+			tfLeftZoom.setText(String.valueOf(leftDrawScale));
+			tfLeftZoom.setVisible(false);
+		}
 	}
 
 	private void initializePositionSlider(Slider sld, SequenceMaster seq, int interval, SequenceCanvasDrawer scd) {
@@ -543,11 +563,55 @@ public class Controller2 implements Initializable {
 
 //==================== Reverse complement processing ===================
 
-	@FXML
-	protected void checkRevcomClick() {
-//		this.clearCanvas(gcDotplot);
-//		this.drawDotplot();
+// TODO とりあえずCheckBoxコントローラー置き
+
+	private void initializeCheckBoxes() {
+
+		if(seqTop.getDataType() == SequenceMaster.typeAb1) {
+			this.cbTopSplit.setSelected(false);
+			this.cbTopSplit.setVisible(false);
+		}else if(seqTop.getDataType() == SequenceMaster.typeFasta) {
+			this.cbTopSplit.setSelected(true);
+			this.cbTopSplit.setVisible(true);
+		}
+
+		if(seqLeft.getDataType() == SequenceMaster.typeAb1) {
+			this.cbLeftSplit.setSelected(false);
+			this.cbLeftSplit.setVisible(false);
+		}else if(seqLeft.getDataType() == SequenceMaster.typeFasta) {
+			this.cbLeftSplit.setSelected(true);
+			this.cbLeftSplit.setVisible(true);
+		}
+	}
+
+	private void checkRevcomClick() {
+		cvDotplotDrawer.setDrawnDotplot(this.judgeDrawnDotplot());
 		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+	}
+
+	@FXML
+	protected void cbTopRevcomClick() {
+		this.checkRevcomClick();
+	}
+
+	@FXML
+	protected void cbLeftRevcomClick() {
+		this.checkRevcomClick();
+	}
+
+	@FXML
+	protected void cbTopSplitClick() {
+
+	}
+
+	@FXML
+	protected void cbLeftSplitClick() {
+
+	}
+
+	@FXML
+	protected void cbMaximizeClick() {
+
 	}
 
 //===================== For debug or etc. ==========================
@@ -561,8 +625,14 @@ public class Controller2 implements Initializable {
 		tfTopZoom.setVisible(false);
 		tfLeftZoom.setVisible(false);
 
+		lbTopZoom.setVisible(false);
+		lbLeftZoom.setVisible(false);
+
 		sliderTopPosition.setVisible(false);
 		sliderLeftPosition.setVisible(false);
+
+		cbTopSplit.setVisible(false);
+		cbLeftSplit.setVisible(false);
 
 		sliderTopScale.setValue(topDrawScale);
 		sliderTopScale.setMin(WAVE_SCALE_MIN);

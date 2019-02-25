@@ -40,7 +40,7 @@
                         <Button fx:id="bResetView" layoutX="12.0" layoutY="157.0" mnemonicParsing="false" onAction="#bResetViewClick" text="Resete View" />
                         <TextArea fx:id="taSelectedReverseSequence" layoutX="8.0" layoutY="538.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
                         <Label layoutX="13.0" layoutY="521.0" text="Selected Reverse Sequence" />
-                        <CheckBox fx:id="checkTopRevcom" layoutX="13.0" layoutY="243.0" mnemonicParsing="false" onMouseClicked="#checkRevcomClick" text="Top Seq" />
+                        <CheckBox fx:id="cbTopRevcom" layoutX="13.0" layoutY="243.0" mnemonicParsing="false" onMouseClicked="#cbTopRevcomClick" text="Top Seq" />
                         <Label layoutX="12.0" layoutY="473.0" text="Y-intercept" />
                         <Label layoutX="12.0" layoutY="636.0" text="Y-intercept" />
                         <TextField fx:id="tfForwardIntercept" layoutX="10.0" layoutY="490.0" prefHeight="25.0" prefWidth="86.0" />
@@ -51,8 +51,8 @@
                         <Label layoutX="13.0" layoutY="22.0" text="Top Seq" />
                         <Label layoutX="101.0" layoutY="22.0" text="Left Seq" />
                         <Label layoutX="13.0" layoutY="226.0" text="Reverse Complement" />
-                        <CheckBox fx:id="checkMaximize" layoutX="14.0" layoutY="199.0" mnemonicParsing="false" onMouseClicked="#checkRevcomClick" prefHeight="17.0" prefWidth="157.0" text="Maximize line length" />
-                        <CheckBox fx:id="checkLeftRevcom" layoutX="13.0" layoutY="262.0" mnemonicParsing="false" onMouseClicked="#checkRevcomClick" text="Left Seq" />
+                        <CheckBox fx:id="cbMaximize" layoutX="14.0" layoutY="199.0" mnemonicParsing="false" onMouseClicked="#cbMaximizeClick" prefHeight="17.0" prefWidth="157.0" text="Maximize line length" />
+                        <CheckBox fx:id="cbLeftRevcom" layoutX="13.0" layoutY="262.0" mnemonicParsing="false" onMouseClicked="#cbLeftRevcomClick" text="Left Seq" />
                      </children></AnchorPane>
             </content>
           </Tab>
@@ -62,11 +62,13 @@
       <Canvas fx:id="cvTop" height="145.0" layoutX="414.0" layoutY="10.0" width="600.0" />
       <Slider fx:id="sliderTopPosition" layoutX="414.0" layoutY="160.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="600.0" />
       <Slider fx:id="sliderTopScale" layoutX="394.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="150.0" prefWidth="14.0" />
-      <Label layoutX="350.0" layoutY="10.0" text="Zoom" />
+      <Label fx:id="lbTopZoom" layoutX="350.0" layoutY="10.0" text="Zoom" />
       <TextField fx:id="tfTopZoom" layoutX="346.0" layoutY="30.0" onKeyPressed="#tfTopZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
       <Slider fx:id="sliderLeftPosition" layoutX="394.0" layoutY="180.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="600.0" prefWidth="14.0" rotate="180.0" />
       <Slider fx:id="sliderLeftScale" layoutX="242.0" layoutY="160.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="145.0" rotate="180.0" />
-      <TextField fx:id="tfLeftZoom" layoutX="282.0" layoutY="132.0" onKeyPressed="#tfLeftZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
-      <Label layoutX="248.0" layoutY="142.0" text="Zoom" />
+      <TextField fx:id="tfLeftZoom" layoutX="242.0" layoutY="132.0" onKeyPressed="#tfLeftZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
+      <Label fx:id="lbLeftZoom" layoutX="242.0" layoutY="115.0" text="Zoom" />
+      <CheckBox fx:id="cbLeftSplit" layoutX="299.0" layoutY="136.0" mnemonicParsing="false" onMouseClicked="#cbLeftSplitClick" selected="true" text="Split" />
+      <CheckBox fx:id="cbTopSplit" layoutX="344.0" layoutY="66.0" mnemonicParsing="false" onMouseClicked="#cbTopSplitClick" selected="true" text="Split" />
    </children>
 </AnchorPane>

@@ -19,8 +19,10 @@ public class FastaSequence {
 	private File f;
 	FastaFormat format = new FastaFormat();
 	private Sequence seq;
+	private boolean[][] workingMap;
 	private boolean[][] map;
 	private boolean[][] revcomMap;
+	private boolean isRevcom = false;
 
 	final static private int A = 0;
 	final static private int C = 1;
@@ -142,5 +144,23 @@ public class FastaSequence {
 				break;
 			}
 		}
+
+		this.setWorkings();
+	}
+
+	public void setRevcom(boolean boo) {
+		this.isRevcom = boo;
+	}
+
+	private void setWorkings() {
+		if(this.isRevcom) {
+			this.workingMap = this.revcomMap;
+		}else {
+			this.workingMap = this.map;
+		}
+	}
+
+	public boolean[][] getWorkingMap(){
+		return workingMap;
 	}
 }

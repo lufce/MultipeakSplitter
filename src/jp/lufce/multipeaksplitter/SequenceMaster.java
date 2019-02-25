@@ -15,6 +15,7 @@ public class SequenceMaster{
 	static final public int typeAb1   = 2;
 
 	private FastaFormat fastaFormat = new FastaFormat();
+	private boolean isRevcom = false;
 
 	protected FastaSequence fastaSeq;
 	protected Ab1Sequence ab1Seq;
@@ -31,6 +32,21 @@ public class SequenceMaster{
 
 	public int getDataType() {
 		return dataType;
+	}
+
+	public void setRevcom(boolean boo) {
+		this.isRevcom = boo;
+
+		switch(dataType) {
+		case typeFasta:
+			fastaSeq.setRevcom(boo);break;
+		case typeAb1:
+			ab1Seq.setRevcom(boo);break;
+		}
+	}
+
+	public boolean isRevcom() {
+		return isRevcom;
 	}
 
 	public boolean[][] getMap(){
