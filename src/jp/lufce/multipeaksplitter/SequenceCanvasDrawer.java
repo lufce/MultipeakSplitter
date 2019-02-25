@@ -188,7 +188,6 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 				}
 			}
 		}
-
 	}
 
 	private double[][] convertDrawIntensity(int[][] intensity, double localMax){
