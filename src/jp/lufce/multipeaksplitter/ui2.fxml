@@ -48,8 +48,8 @@
                         <TextField fx:id="tfThreshold" layoutX="101.0" layoutY="94.0" prefHeight="25.0" prefWidth="58.0" text="13" />
                         <Label layoutX="96.0" layoutY="77.0" text="Threshold Size" />
                         <TextField fx:id="tfLeftCutoff" layoutX="101.0" layoutY="40.0" prefHeight="25.0" prefWidth="58.0" text="10" />
-                        <Label layoutX="13.0" layoutY="22.0" text="Top Seq" />
-                        <Label layoutX="101.0" layoutY="22.0" text="Left Seq" />
+                        <Label fx:id="lbTopCutoff" layoutX="13.0" layoutY="22.0" text="Top Seq" />
+                        <Label fx:id="lbLeftCutoff" layoutX="101.0" layoutY="22.0" text="Left Seq" />
                         <Label layoutX="13.0" layoutY="226.0" text="Reverse Complement" />
                         <CheckBox fx:id="cbMaximize" layoutX="14.0" layoutY="199.0" mnemonicParsing="false" onMouseClicked="#cbMaximizeClick" prefHeight="17.0" prefWidth="157.0" text="Maximize line length" />
                         <CheckBox fx:id="cbLeftRevcom" layoutX="13.0" layoutY="262.0" mnemonicParsing="false" onMouseClicked="#cbLeftRevcomClick" text="Left Seq" />

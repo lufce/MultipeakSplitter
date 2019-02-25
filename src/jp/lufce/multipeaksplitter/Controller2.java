@@ -68,6 +68,8 @@ public class Controller2 implements Initializable {
 	@FXML protected TextArea taLog;
 
 	@FXML protected Tab tabSequence;
+	@FXML protected Label lbTopCutoff;
+	@FXML protected Label lbLeftCutoff;
 	@FXML protected TextField tfTopCutoff;
 	@FXML protected TextField tfLeftCutoff;
 	@FXML protected TextField tfWindow;
@@ -189,6 +191,8 @@ public class Controller2 implements Initializable {
 
 			taLog.appendText("end making dotplot"+CRLF);
 
+			//TopとLeftのSeq形式に合わせた表示の変更
+
 			//スライダーの設定
 			this.initializeSliders();
 
@@ -236,6 +240,45 @@ public class Controller2 implements Initializable {
 			taLog.appendText("end remaking dotplot"+CRLF);
 			//this.drawSeqCanvas(topWaveStart,gcTop);
 			tabPane1.getSelectionModel().select(tabSequence);
+		}
+	}
+
+	private void initializeAppearance() {
+		bToRight.setVisible(true);
+		bToLeft.setVisible(true);
+		bUp.setVisible(true);
+		bDown.setVisible(true);
+
+		if(seqTop.getDataType() == SequenceMaster.typeAb1) {
+			lbTopZoom.setVisible(true);
+			sliderTopScale.setVisible(true);
+			tfTopZoom.setText(String.valueOf(topDrawScale));
+			tfTopZoom.setVisible(true);
+			lbTopCutoff.setVisible(true);
+			tfTopCutoff.setVisible(true);
+		}else if(seqTop.getDataType() == SequenceMaster.typeFasta) {
+			lbTopZoom.setVisible(false);
+			sliderLeftScale.setVisible(false);
+			tfTopZoom.setText(String.valueOf(topDrawScale));
+			tfTopZoom.setVisible(false);
+			lbTopCutoff.setVisible(false);
+			tfTopCutoff.setVisible(false);
+		}
+
+		if(seqLeft.getDataType() == SequenceMaster.typeAb1) {
+			lbLeftZoom.setVisible(true);
+			sliderLeftScale.setVisible(true);
+			tfLeftZoom.setText(String.valueOf(leftDrawScale));
+			tfLeftZoom.setVisible(true);
+			lbLeftCutoff.setVisible(true);
+			tfLeftCutoff.setVisible(true);
+		}else if(seqLeft.getDataType() == SequenceMaster.typeFasta) {
+			lbLeftZoom.setVisible(false);
+			sliderLeftScale.setVisible(false);
+			tfLeftZoom.setText(String.valueOf(leftDrawScale));
+			tfLeftZoom.setVisible(false);
+			lbLeftCutoff.setVisible(false);
+			tfLeftCutoff.setVisible(false);
 		}
 	}
 
@@ -458,39 +501,9 @@ public class Controller2 implements Initializable {
 
 //======================= Slider ==================================
 	private void initializeSliders() {
-
 		//波形の位置変更のスライダーの設定
 		initializePositionSlider(sliderTopPosition, seqTop, cvTopDrawer);
 		initializePositionSlider(sliderLeftPosition, seqLeft, cvLeftDrawer);
-
-		bToRight.setVisible(true);
-		bToLeft.setVisible(true);
-		bUp.setVisible(true);
-		bDown.setVisible(true);
-
-		if(seqTop.getDataType() == SequenceMaster.typeAb1) {
-			lbTopZoom.setVisible(true);
-			sliderTopScale.setVisible(true);
-			tfTopZoom.setText(String.valueOf(topDrawScale));
-			tfTopZoom.setVisible(true);
-		}else if(seqTop.getDataType() == SequenceMaster.typeFasta) {
-			lbTopZoom.setVisible(false);
-			sliderLeftScale.setVisible(false);
-			tfTopZoom.setText(String.valueOf(topDrawScale));
-			tfTopZoom.setVisible(false);
-		}
-
-		if(seqLeft.getDataType() == SequenceMaster.typeAb1) {
-			lbLeftZoom.setVisible(true);
-			sliderLeftScale.setVisible(true);
-			tfLeftZoom.setText(String.valueOf(leftDrawScale));
-			tfLeftZoom.setVisible(true);
-		}else if(seqLeft.getDataType() == SequenceMaster.typeFasta) {
-			lbLeftZoom.setVisible(false);
-			sliderLeftScale.setVisible(false);
-			tfLeftZoom.setText(String.valueOf(leftDrawScale));
-			tfLeftZoom.setVisible(false);
-		}
 	}
 
 	private void initializePositionSlider(Slider sld, SequenceMaster seq, SequenceCanvasDrawer scd) {
