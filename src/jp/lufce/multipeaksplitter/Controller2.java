@@ -192,6 +192,7 @@ public class Controller2 implements Initializable {
 			taLog.appendText("end making dotplot"+CRLF);
 
 			//TopとLeftのSeq形式に合わせた表示の変更
+			this.initializeAppearance();
 
 			//スライダーの設定
 			this.initializeSliders();
