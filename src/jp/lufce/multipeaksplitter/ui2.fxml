@@ -6,10 +6,10 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jp.lufce.multipeaksplitter.Controller2">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="730.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jp.lufce.multipeaksplitter.Controller2">
    <children>
-      <Canvas fx:id="cvDotplot" height="600.0" layoutX="414.0" layoutY="180.0" onMouseClicked="#cvMapMouseClicked" onMouseDragged="#cvMapMouseDragged" onMouseMoved="#cvMapMouseMoved" onMousePressed="#cvMapMousePressed" onScroll="#cvMapScroll" width="600.0" />
-      <TabPane fx:id="tabPane1" layoutX="14.0" layoutY="14.0" prefHeight="713.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
+      <Canvas fx:id="cvDotplot" height="500.0" layoutX="440.0" layoutY="200.0" onMouseClicked="#cvMapMouseClicked" onMouseDragged="#cvMapMouseDragged" onMouseMoved="#cvMapMouseMoved" onMousePressed="#cvMapMousePressed" onScroll="#cvMapScroll" width="500.0" />
+      <TabPane fx:id="tabPane1" layoutX="14.0" layoutY="14.0" prefHeight="680.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
         <tabs>
           <Tab text="FIle">
             <content>
@@ -35,16 +35,16 @@
                         <TextField fx:id="tfTopCutoff" layoutX="13.0" layoutY="40.0" prefHeight="25.0" prefWidth="58.0" text="10" />
                         <TextField fx:id="tfWindow" layoutX="16.0" layoutY="94.0" prefHeight="25.0" prefWidth="58.0" text="15" />
                         <Button fx:id="bRemake" layoutX="11.0" layoutY="126.0" mnemonicParsing="false" onAction="#bRemakeClick" text="Remake Dotplot" />
-                        <Label layoutX="13.0" layoutY="355.0" text="Selected Forward Sequence" />
-                        <TextArea fx:id="taSelectedForwardSequence" layoutX="8.0" layoutY="372.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
+                        <Label layoutX="13.0" layoutY="299.0" text="Selected Forward Sequence" />
+                        <TextArea fx:id="taSelectedForwardSequence" layoutX="8.0" layoutY="316.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
                         <Button fx:id="bResetView" layoutX="12.0" layoutY="157.0" mnemonicParsing="false" onAction="#bResetViewClick" text="Resete View" />
-                        <TextArea fx:id="taSelectedReverseSequence" layoutX="8.0" layoutY="538.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
-                        <Label layoutX="13.0" layoutY="521.0" text="Selected Reverse Sequence" />
+                        <TextArea fx:id="taSelectedReverseSequence" layoutX="8.0" layoutY="482.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
+                        <Label layoutX="13.0" layoutY="465.0" text="Selected Reverse Sequence" />
                         <CheckBox fx:id="cbTopRevcom" layoutX="13.0" layoutY="243.0" mnemonicParsing="false" onMouseClicked="#cbTopRevcomClick" text="Top Seq" />
-                        <Label layoutX="12.0" layoutY="473.0" text="Y-intercept" />
-                        <Label layoutX="12.0" layoutY="636.0" text="Y-intercept" />
-                        <TextField fx:id="tfForwardIntercept" layoutX="10.0" layoutY="490.0" prefHeight="25.0" prefWidth="86.0" />
-                        <TextField fx:id="tfReverseIntercept" layoutX="10.0" layoutY="653.0" prefHeight="25.0" prefWidth="86.0" />
+                        <Label layoutX="12.0" layoutY="417.0" text="Y-intercept" />
+                        <Label layoutX="12.0" layoutY="580.0" text="Y-intercept" />
+                        <TextField fx:id="tfForwardIntercept" layoutX="10.0" layoutY="434.0" prefHeight="25.0" prefWidth="86.0" />
+                        <TextField fx:id="tfReverseIntercept" layoutX="10.0" layoutY="597.0" prefHeight="25.0" prefWidth="86.0" />
                         <TextField fx:id="tfThreshold" layoutX="101.0" layoutY="94.0" prefHeight="25.0" prefWidth="58.0" text="13" />
                         <Label layoutX="96.0" layoutY="77.0" text="Threshold Size" />
                         <TextField fx:id="tfLeftCutoff" layoutX="101.0" layoutY="40.0" prefHeight="25.0" prefWidth="58.0" text="10" />
@@ -58,17 +58,22 @@
           </Tab>
         </tabs>
       </TabPane>
-      <Canvas fx:id="cvLeft" height="600.0" layoutX="242.0" layoutY="180.0" width="145.0" />
-      <Canvas fx:id="cvTop" height="145.0" layoutX="414.0" layoutY="10.0" width="600.0" />
-      <Slider fx:id="sliderTopPosition" layoutX="414.0" layoutY="160.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="600.0" />
-      <Slider fx:id="sliderTopScale" layoutX="394.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="150.0" prefWidth="14.0" />
-      <Label fx:id="lbTopZoom" layoutX="350.0" layoutY="10.0" text="Zoom" />
-      <TextField fx:id="tfTopZoom" layoutX="346.0" layoutY="30.0" onKeyPressed="#tfTopZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
-      <Slider fx:id="sliderLeftPosition" layoutX="394.0" layoutY="180.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="600.0" prefWidth="14.0" rotate="180.0" />
-      <Slider fx:id="sliderLeftScale" layoutX="242.0" layoutY="160.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="145.0" rotate="180.0" />
-      <TextField fx:id="tfLeftZoom" layoutX="242.0" layoutY="132.0" onKeyPressed="#tfLeftZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
-      <Label fx:id="lbLeftZoom" layoutX="242.0" layoutY="115.0" text="Zoom" />
-      <CheckBox fx:id="cbLeftSplit" layoutX="299.0" layoutY="136.0" mnemonicParsing="false" onMouseClicked="#cbLeftSplitClick" selected="true" text="Split" />
-      <CheckBox fx:id="cbTopSplit" layoutX="344.0" layoutY="66.0" mnemonicParsing="false" onMouseClicked="#cbTopSplitClick" selected="true" text="Split" />
+      <Canvas fx:id="cvLeft" height="500.0" layoutX="241.0" layoutY="200.0" width="145.0" />
+      <Canvas fx:id="cvTop" height="145.0" layoutX="440.0" layoutY="10.0" width="500.0" />
+      <Slider fx:id="sliderTopPosition" layoutX="440.0" layoutY="180.0" majorTickUnit="1.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" minorTickCount="0" prefHeight="14.0" prefWidth="500.0" snapToTicks="true" />
+      <Slider fx:id="sliderTopScale" layoutX="416.0" layoutY="10.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" orientation="VERTICAL" prefHeight="150.0" prefWidth="14.0" />
+      <Label fx:id="lbTopZoom" layoutX="372.0" layoutY="10.0" text="Zoom" />
+      <TextField fx:id="tfTopZoom" layoutX="368.0" layoutY="30.0" onKeyPressed="#tfTopZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
+      <Slider fx:id="sliderLeftPosition" layoutX="416.0" layoutY="200.0" majorTickUnit="1.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" minorTickCount="0" orientation="VERTICAL" prefHeight="500.0" prefWidth="14.0" rotate="180.0" snapToTicks="true" />
+      <Slider fx:id="sliderLeftScale" layoutX="241.0" layoutY="180.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="145.0" rotate="180.0" />
+      <TextField fx:id="tfLeftZoom" layoutX="242.0" layoutY="155.0" onKeyPressed="#tfLeftZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
+      <Label fx:id="lbLeftZoom" layoutX="242.0" layoutY="138.0" text="Zoom" />
+      <CheckBox fx:id="cbLeftSplit" layoutX="299.0" layoutY="159.0" mnemonicParsing="false" onMouseClicked="#cbLeftSplitClick" selected="true" text="Split" />
+      <CheckBox fx:id="cbTopSplit" layoutX="366.0" layoutY="66.0" mnemonicParsing="false" onMouseClicked="#cbTopSplitClick" selected="true" text="Split" />
+      <Button fx:id="bToLeft" layoutX="654.0" layoutY="157.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bToLeftClick" prefHeight="25.0" prefWidth="30.0" text="←" />
+      <Button fx:id="bToRight" layoutX="698.0" layoutY="157.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bToRightClick" prefHeight="25.0" prefWidth="30.0" text="→" />
+      <Button fx:id="bUp" layoutX="388.0" layoutY="425.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bUpClick" prefHeight="25.0" prefWidth="30.0" text="↑" />
+      <Button fx:id="bDown" layoutX="388.0" layoutY="460.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bDownClick" prefHeight="25.0" prefWidth="30.0" text="↓" />
+      <Label fx:id="lbDebug" alignment="TOP_LEFT" layoutX="241.0" layoutY="18.0" prefHeight="113.0" prefWidth="114.0" text="Label" wrapText="true" />
    </children>
 </AnchorPane>

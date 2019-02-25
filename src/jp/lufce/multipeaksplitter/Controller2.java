@@ -98,17 +98,21 @@ public class Controller2 implements Initializable {
 	@FXML protected TextField tfLeftZoom;
 	@FXML protected Label lbTopZoom;
 	@FXML protected Label lbLeftZoom;
+	@FXML protected Button bToRight;
+	@FXML protected Button bToLeft;
+	@FXML protected Button bUp;
+	@FXML protected Button bDown;
 	private GraphicsContext gcTop;
 	private GraphicsContext gcLeft;
 
-	private int topDrawInterval = 1;
-	private int leftDrawInterval = 1;
 	private double topDrawScale = WAVE_SCALE_DEFAULT;
 	private double leftDrawScale = WAVE_SCALE_DEFAULT;
 
 	private double scale = 1.0;
 
 	private boolean drag = false;
+
+	@FXML protected Label lbDebug;
 
 //========================== File input =============================
 
@@ -456,8 +460,13 @@ public class Controller2 implements Initializable {
 	private void initializeSliders() {
 
 		//波形の位置変更のスライダーの設定
-		initializePositionSlider(sliderTopPosition, seqTop, topDrawInterval, cvTopDrawer);
-		initializePositionSlider(sliderLeftPosition, seqLeft, leftDrawInterval, cvLeftDrawer);
+		initializePositionSlider(sliderTopPosition, seqTop, cvTopDrawer);
+		initializePositionSlider(sliderLeftPosition, seqLeft, cvLeftDrawer);
+
+		bToRight.setVisible(true);
+		bToLeft.setVisible(true);
+		bUp.setVisible(true);
+		bDown.setVisible(true);
 
 		if(seqTop.getDataType() == SequenceMaster.typeAb1) {
 			lbTopZoom.setVisible(true);
@@ -484,22 +493,30 @@ public class Controller2 implements Initializable {
 		}
 	}
 
-	private void initializePositionSlider(Slider sld, SequenceMaster seq, int interval, SequenceCanvasDrawer scd) {
+	private void initializePositionSlider(Slider sld, SequenceMaster seq, SequenceCanvasDrawer scd) {
 
-		sld.setMax(getSliderMaxValue(seq, sld, interval, scd));
+		sld.setMax(getSliderMaxValue(seq, sld, scd));
 		sld.valueProperty().addListener( (a, b, c) -> this.slidePosition(sld, scd) );
 		sld.setVisible(true);
 	}
 
-	private double getSliderMaxValue(SequenceMaster seq, Slider sld, int interval, SequenceCanvasDrawer scd) {
+	private double getSliderMaxValue(SequenceMaster seq, Slider sld, SequenceCanvasDrawer scd) {
 		double max = 0;
+		double range = 0;
+
+		//TopとLeftで取得すべき値がちがう。その判定。
+		if(sld.getWidth() > sld.getHeight()) {
+			range = sld.getWidth();
+		}else {
+			range = sld.getHeight();
+		}
 
 		switch( seq.getDataType() ) {
 		case SequenceMaster.typeAb1:
-			max = Math.floor( (seq.ab1Seq.getBasecalls()[seq.ab1Seq.getSequenceLength()-1] - sld.getWidth()) / interval);
+			max = Math.floor( (seq.ab1Seq.getWorkingBasecall()[seq.ab1Seq.getSequenceLength()-1] - range));
 			break;
 		case SequenceMaster.typeFasta:
-			max = Math.floor( (seq.getSequenceLength() - sld.getWidth() * scd.getTextInterval() ) / interval);
+			max = Math.floor( (seq.getSequenceLength() - range / scd.getTextInterval()) );
 			break;
 		}
 
@@ -509,10 +526,17 @@ public class Controller2 implements Initializable {
 	private void slidePosition(Slider sld, SequenceCanvasDrawer scd) {
 		scd.updateSeqCanvas( (int)Math.round(sld.getValue()) );
 
-//		this.clearCanvas(gcDotplot);
-//		this.drawDotplot();
 		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
 		cvDotplotDrawer.highlightSelectedDotSequence();
+
+		//TODO for debug
+
+		double tMax = this.sliderTopPosition.getMax();
+		double tNow = this.sliderTopPosition.getValue();
+		double lMax = this.sliderLeftPosition.getMax();
+		double lNow = this.sliderLeftPosition.getValue();
+
+		lbDebug.setText(Double.toString(tMax)+"\n"+Double.toString(tNow)+"\n"+Double.toString(lMax)+"\n"+Double.toString(lNow));
 
 	}
 
@@ -561,6 +585,38 @@ public class Controller2 implements Initializable {
 		}
 	}
 
+	@FXML
+	protected void bToRightClick() {
+		int start = cvTopDrawer.getDrawableNextSeqStart();
+		if( start != -1 ) {
+			this.sliderTopPosition.setValue(start);
+		}
+	}
+
+	@FXML
+	protected void bToLeftClick() {
+		int start = cvTopDrawer.getDrawablePreviousSeqStart();
+		if( start != -1 ) {
+			this.sliderTopPosition.setValue(start);
+		}
+	}
+
+	@FXML
+	protected void bDownClick() {
+		int start = cvLeftDrawer.getDrawableNextSeqStart();
+		if( start != -1 ) {
+			this.sliderLeftPosition.setValue(start);
+		}
+	}
+
+	@FXML
+	protected void bUpClick() {
+		int start = cvLeftDrawer.getDrawablePreviousSeqStart();
+		if( start != -1 ) {
+			this.sliderLeftPosition.setValue(start);
+		}
+	}
+
 //==================== Reverse complement processing ===================
 
 // TODO とりあえずCheckBoxコントローラー置き
@@ -584,19 +640,28 @@ public class Controller2 implements Initializable {
 		}
 	}
 
-	private void checkRevcomClick() {
+	private void checkRevcomClick(boolean isSelected, SequenceMaster seq, SequenceCanvasDrawer scd, Slider sld) {
+		double now = sld.getValue();
+		double max = sld.getMax();
+
+		sld.setValue((int)(max - now));
+
+		seq.setRevcom(isSelected);
+
+		scd.updateSeqCanvas((int)(max - now));
+
 		cvDotplotDrawer.setDrawnDotplot(this.judgeDrawnDotplot());
 		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
 	}
 
 	@FXML
 	protected void cbTopRevcomClick() {
-		this.checkRevcomClick();
+		this.checkRevcomClick(cbTopRevcom.isSelected(), this.seqTop, this.cvTopDrawer, this.sliderTopPosition);
 	}
 
 	@FXML
 	protected void cbLeftRevcomClick() {
-		this.checkRevcomClick();
+		this.checkRevcomClick(cbLeftRevcom.isSelected(), this.seqLeft, this.cvLeftDrawer, this.sliderLeftPosition);
 	}
 
 	@FXML
@@ -630,6 +695,11 @@ public class Controller2 implements Initializable {
 
 		sliderTopPosition.setVisible(false);
 		sliderLeftPosition.setVisible(false);
+
+		bToRight.setVisible(false);
+		bToLeft.setVisible(false);
+		bUp.setVisible(false);
+		bDown.setVisible(false);
 
 		cbTopSplit.setVisible(false);
 		cbLeftSplit.setVisible(false);

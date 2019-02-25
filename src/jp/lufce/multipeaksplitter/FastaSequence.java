@@ -150,6 +150,7 @@ public class FastaSequence {
 
 	public void setRevcom(boolean boo) {
 		this.isRevcom = boo;
+		this.setWorkings();
 	}
 
 	private void setWorkings() {

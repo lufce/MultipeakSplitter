@@ -9,17 +9,23 @@ import org.biojava.bio.seq.DNATools;
 public class Ab1Sequence extends ABITrace {
 
 	private boolean[][] workingMap;
+	private int[] workingBasecall;
 	private int[][] workingIntensity;
-	private int[][] workingBasecall;
+	private int[][] workingBasecallIntensity;
 
 	private boolean[][] map;
 	private boolean[][] revcomMap;
+	private int[] basecall;
 	private int[][] multiBasecallIntensity;
 	private int[][] multiAllIntensity;
+	private int[] revcomBasecall;
 	private int[][] revcomMultiBasecallIntensity;
 	private int[][] revcomMultiAllIntensity;
 
 	private boolean isRevcom = false;
+	private int seqLength = 0;
+	private int traceLength = 0;
+	private int traceEnd = 0;
 
 	final private int A = 0;
 	final private int C = 1;
@@ -28,10 +34,23 @@ public class Ab1Sequence extends ABITrace {
 
 	public Ab1Sequence(File ABIFile) throws IOException {
 		super(ABIFile);
-		multiBasecallIntensity = new int[4][super.getSequenceLength()];
-		multiAllIntensity = new int[4][super.getTraceLength()];
-		revcomMultiBasecallIntensity = new int[4][super.getSequenceLength()];
-		revcomMultiAllIntensity = new int[4][super.getTraceLength()];
+
+		seqLength = super.getSequenceLength();
+		traceLength = super.getTraceLength();
+
+		basecall = super.getBasecalls();
+		revcomBasecall = new int[seqLength];
+
+		traceEnd = basecall[seqLength-1];
+
+		for(int n = 0; n < seqLength; n++) {
+			revcomBasecall[n] = traceEnd - basecall[seqLength - n - 1];
+		}
+
+		multiBasecallIntensity = new int[4][seqLength];
+		multiAllIntensity = new int[4][traceLength];
+		revcomMultiBasecallIntensity = new int[4][seqLength];
+		revcomMultiAllIntensity = new int[4][traceLength];
 	}
 
 	public void makeMap(int cutoff){
@@ -44,12 +63,12 @@ public class Ab1Sequence extends ABITrace {
 		}
 
 		this.getAllTrace();
-		map = new boolean[4][super.getSequenceLength()];
-		revcomMap = new boolean[4][super.getSequenceLength()];
+		map = new boolean[4][seqLength];
+		revcomMap = new boolean[4][seqLength];
 
 		int maxpeak = 0;
 
-		for(int m = 0; m<multiBasecallIntensity[0].length; m++){
+		for(int m = 0; m < seqLength; m++){
 
 			//最大値の取得
 			for(int n=0; n<4; n++){
@@ -62,10 +81,10 @@ public class Ab1Sequence extends ABITrace {
 			for(int n = 0; n<4; n++){
 				if(maxpeak != 0 && (double)multiBasecallIntensity[n][m]/maxpeak >= (double)cutoff/100){
 					map[n][m]= true;
-					revcomMap[3-n][multiBasecallIntensity[0].length -1 -m] = true;
+					revcomMap[3-n][seqLength -1 -m] = true;
 				}else{
 					map[n][m]= false;
-					revcomMap[3-n][multiBasecallIntensity[0].length -1 -m] = false;
+					revcomMap[3-n][seqLength -1 -m] = false;
 				}
 			}
 
@@ -75,6 +94,10 @@ public class Ab1Sequence extends ABITrace {
 
 		//isRevcomフラグに基づいて、必要とされている(Workingの)情報を登録
 		this.setWorkings();
+	}
+
+	public int[] getWorkingBasecall() {
+		return this.workingBasecall;
 	}
 
 	public boolean[][] getMap(){
@@ -89,11 +112,11 @@ public class Ab1Sequence extends ABITrace {
 		return this.workingMap;
 	}
 
-	public int[][] getMultiBasecallIntensity(){
-		return this.workingBasecall;
+	public int[][] getWorkingMultiBasecallIntensity(){
+		return this.workingBasecallIntensity;
 	}
 
-	public int[][] getMultiAllIntensity(){
+	public int[][] getWorkingMultiAllIntensity(){
 		return this.workingIntensity;
 	}
 
@@ -118,8 +141,8 @@ public class Ab1Sequence extends ABITrace {
 
 		for(int m = start; m < end; m++) {
 			for(int n = 0; n < 4; n++) {
-				if(multiAllIntensity[n][m] > localMax) {
-					localMax = multiAllIntensity[n][m];
+				if(workingIntensity[n][m] > localMax) {
+					localMax = workingIntensity[n][m];
 				}
 			}
 		}
@@ -127,7 +150,7 @@ public class Ab1Sequence extends ABITrace {
 	}
 
 	public int[][] getSubarrayMultiAllIntensity(int start, int end) throws ArrayIndexOutOfBoundsException{
-		if(start < 0 || this.multiAllIntensity[1].length < end) {
+		if(start < 0 || traceEnd < end) {
 			System.out.println("out of bounds");
 			throw new ArrayIndexOutOfBoundsException();
 		}
@@ -136,14 +159,14 @@ public class Ab1Sequence extends ABITrace {
 
 		for(int m = 0; m < subarray[1].length; m++) {
 			for(int n = 0; n < 4; n++) {
-				subarray[n][m] = this.multiAllIntensity[n][m+start];
+				subarray[n][m] = this.workingIntensity[n][m+start];
 			}
 		}
 		return subarray;
 	}
 
 	public int[][] getSubarrayMultiBasecallIntensity(int start, int end) throws ArrayIndexOutOfBoundsException{
-		if(start < 0 || this.multiBasecallIntensity[1].length < end) {
+		if(start < 0 || traceEnd < end) {
 			System.out.println("out of bounds");
 			throw new ArrayIndexOutOfBoundsException();
 		}
@@ -152,32 +175,32 @@ public class Ab1Sequence extends ABITrace {
 
 		for(int m = 0; m < subarray[1].length; m++) {
 			for(int n = 0; n < 4; n++) {
-				subarray[n][m] = this.multiBasecallIntensity[n][m];
+				subarray[n][m] = this.workingBasecallIntensity[n][m];
 			}
 		}
 		return subarray;
+	}
+
+	public int getTraceEnd() {
+		return this.traceEnd;
 	}
 
 	private void getAllTrace() {
 		//各塩基ごとのベースコール座標でのトレースデータを含んだ二次元配列を返す
 		//第一index 0:A 1:C 2:G 3:T
 
-		int seqLength   = super.getSequenceLength();
-		int traceLength = super.getTraceLength();
-
 		try {
-			int[] basecall = super.getBasecalls();
 
 			multiAllIntensity[A] = super.getTrace(DNATools.a());
 			multiAllIntensity[C] = super.getTrace(DNATools.c());
 			multiAllIntensity[G] = super.getTrace(DNATools.g());
 			multiAllIntensity[T] = super.getTrace(DNATools.t());
 
-			for(int n = 0; n < traceLength; n++) {
-				revcomMultiAllIntensity[T][n] = multiAllIntensity[A][traceLength - n - 1];
-				revcomMultiAllIntensity[G][n] = multiAllIntensity[C][traceLength - n - 1];
-				revcomMultiAllIntensity[C][n] = multiAllIntensity[G][traceLength - n - 1];
-				revcomMultiAllIntensity[A][n] = multiAllIntensity[T][traceLength - n - 1];
+			for(int n = 0; n < traceEnd; n++) {
+				revcomMultiAllIntensity[T][n] = multiAllIntensity[A][traceEnd - n - 1];
+				revcomMultiAllIntensity[G][n] = multiAllIntensity[C][traceEnd - n - 1];
+				revcomMultiAllIntensity[C][n] = multiAllIntensity[G][traceEnd - n - 1];
+				revcomMultiAllIntensity[A][n] = multiAllIntensity[T][traceEnd - n - 1];
 			}
 
 			for(int n = 0; n < seqLength; n++) {
@@ -199,17 +222,20 @@ public class Ab1Sequence extends ABITrace {
 
 	public void setRevcom(boolean boo) {
 		this.isRevcom = boo;
+		this.setWorkings();
 	}
 
 	private void setWorkings() {
 		if(this.isRevcom) {
-			this.workingBasecall  = this.revcomMultiBasecallIntensity;
-			this.workingIntensity = this.revcomMultiAllIntensity;
-			this.workingMap       = this.revcomMap;
+			this.workingBasecallIntensity  = this.revcomMultiBasecallIntensity;
+			this.workingBasecall           = this.revcomBasecall;
+			this.workingIntensity          = this.revcomMultiAllIntensity;
+			this.workingMap                = this.revcomMap;
 		}else {
-			this.workingBasecall  = this.multiBasecallIntensity;
-			this.workingIntensity = this.multiAllIntensity;
-			this.workingMap       = this.map;
+			this.workingBasecallIntensity  = this.multiBasecallIntensity;
+			this.workingBasecall           = this.basecall;
+			this.workingIntensity          = this.multiAllIntensity;
+			this.workingMap                = this.map;
 		}
 	}
 

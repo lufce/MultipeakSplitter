@@ -87,16 +87,48 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 		}
 	}
 
+	public int getDrawableNextSeqStart() {
+		switch(seq.getDataType()) {
+		case SequenceMaster.typeFasta:
+			if(this.sequenceEndIndex + 1 <= seq.getSequenceLength()) {
+				return this.sequenceStartIndex + 1;
+			}
+			break;
+		case SequenceMaster.typeAb1:
+			if(seq.ab1Seq.getBasecalls()[this.sequenceStartIndex + 1] + drawableRange <= seq.ab1Seq.getTraceEnd()) {
+				return seq.ab1Seq.getBasecalls()[this.sequenceStartIndex + 1];
+			}
+			break;
+		}
+		return -1;
+	}
+
+	public int getDrawablePreviousSeqStart() {
+		switch(seq.getDataType()) {
+		case SequenceMaster.typeFasta:
+			if(this.sequenceStartIndex - 1 >= 0) {
+				return this.sequenceStartIndex - 1;
+			}
+			break;
+		case SequenceMaster.typeAb1:
+			if(this.sequenceStartIndex - 1 >= 0) {
+				return seq.ab1Seq.getBasecalls()[this.sequenceStartIndex - 1];
+			}
+			break;
+		}
+		return -1;
+	}
+
 	private void drawSeqWaveAndText(int start) {
 
-		int basecallStart = start;
-		int basecallEnd = basecallStart + drawableRange * drawInterval;
+		int waveStart = start;
+		int waveEnd = waveStart + drawableRange * drawInterval;
 
-		double localMax = seq.ab1Seq.getLocalMaxIntensity(basecallStart, basecallEnd);
-		boolean[][] map = seq.ab1Seq.getMap();
-		int[] basecall = seq.ab1Seq.getBasecalls();
+		double localMax = seq.ab1Seq.getLocalMaxIntensity(waveStart, waveEnd);
+		boolean[][] map = seq.ab1Seq.getWorkingMap();
+		int[] basecall = seq.ab1Seq.getWorkingBasecall();
 		int pointer = this.searchSequenceStartIndex(basecall, start, sequenceStartIndex);
-		double[][] drawIntensity = this.convertDrawIntensity(seq.ab1Seq.getSubarrayMultiAllIntensity(basecallStart, basecallEnd), localMax);
+		double[][] drawIntensity = this.convertDrawIntensity(seq.ab1Seq.getSubarrayMultiAllIntensity(waveStart, waveEnd), localMax);
 
 		gc.setLineWidth(WAVELINE_WIDTH);
 
@@ -111,7 +143,9 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 				}
 			}
 
-			if(basecallStart < basecall[basecall.length-1] && basecall[pointer] == m + basecallStart) {
+			//if(waveStart < basecall[basecall.length-1] && basecall[pointer] == m + waveStart) {
+
+			if(pointer < basecall.length && basecall[pointer] == m + waveStart) {
 				for(int n = 0; n < 4; n++) {
 					if(map[n][pointer]) {
 						gc.setFill(BASE_COLOR[n]);
@@ -153,13 +187,15 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 					if(basecall[n] < start) {
 						sequenceStartIndex = n + 1;
 						break;
+					}else if(basecall[n] == start) {
+						sequenceStartIndex = n;
 					}
 				}
 			}else {
 				//前回のindexからbasecallの最後に向かって探索
 
 				for(int n = previousIndex; n < basecall.length; n++) {
-					if(basecall[n] > start) {
+					if(basecall[n] >= start) {
 						sequenceStartIndex = n;
 						break;
 					}
