@@ -21,6 +21,7 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 	final private double WAVELINE_WIDTH = 0.5;
 	final private int WAVE_DRAW_HEIGHT = 100;
 	final private int TEXT_INTERVAL = 10;
+	final private int VIEW_OFFSET = 0;
 
 	SequenceCanvasDrawer(GraphicsContext gc_arg, SequenceMaster seq_arg, boolean left){
 		super(gc_arg);
@@ -95,8 +96,8 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 			}
 			break;
 		case SequenceMaster.typeAb1:
-			if(seq.ab1Seq.getBasecalls()[this.sequenceStartIndex + 1] + drawableRange <= seq.ab1Seq.getTraceEnd()) {
-				return seq.ab1Seq.getBasecalls()[this.sequenceStartIndex + 1];
+			if(seq.ab1Seq.getBasecalls()[this.sequenceStartIndex + 1] + drawableRange - VIEW_OFFSET <= seq.ab1Seq.getTraceEnd()) {
+				return seq.ab1Seq.getBasecalls()[this.sequenceStartIndex + 1] - VIEW_OFFSET;
 			}
 			break;
 		}
@@ -111,8 +112,8 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 			}
 			break;
 		case SequenceMaster.typeAb1:
-			if(this.sequenceStartIndex - 1 >= 0) {
-				return seq.ab1Seq.getBasecalls()[this.sequenceStartIndex - 1];
+			if(this.sequenceStartIndex - 1 - VIEW_OFFSET >= 0) {
+				return seq.ab1Seq.getBasecalls()[this.sequenceStartIndex - 1] - VIEW_OFFSET;
 			}
 			break;
 		}

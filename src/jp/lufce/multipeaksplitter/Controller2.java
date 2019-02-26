@@ -101,9 +101,13 @@ public class Controller2 implements Initializable {
 	@FXML protected Label lbTopZoom;
 	@FXML protected Label lbLeftZoom;
 	@FXML protected Button bToRight;
+	@FXML protected Button bToSlightRight;
 	@FXML protected Button bToLeft;
+	@FXML protected Button bToSlightLeft;
 	@FXML protected Button bUp;
+	@FXML protected Button bSlightUp;
 	@FXML protected Button bDown;
+	@FXML protected Button bSlightDown;
 	private GraphicsContext gcTop;
 	private GraphicsContext gcLeft;
 
@@ -255,15 +259,24 @@ public class Controller2 implements Initializable {
 			sliderTopScale.setVisible(true);
 			tfTopZoom.setText(String.valueOf(topDrawScale));
 			tfTopZoom.setVisible(true);
+
 			lbTopCutoff.setVisible(true);
 			tfTopCutoff.setVisible(true);
+
+			bToSlightRight.setVisible(true);
+			bToSlightLeft.setVisible(true);
+
 		}else if(seqTop.getDataType() == SequenceMaster.typeFasta) {
 			lbTopZoom.setVisible(false);
 			sliderLeftScale.setVisible(false);
 			tfTopZoom.setText(String.valueOf(topDrawScale));
 			tfTopZoom.setVisible(false);
+
 			lbTopCutoff.setVisible(false);
 			tfTopCutoff.setVisible(false);
+
+			bToSlightRight.setVisible(false);
+			bToSlightLeft.setVisible(false);
 		}
 
 		if(seqLeft.getDataType() == SequenceMaster.typeAb1) {
@@ -271,15 +284,23 @@ public class Controller2 implements Initializable {
 			sliderLeftScale.setVisible(true);
 			tfLeftZoom.setText(String.valueOf(leftDrawScale));
 			tfLeftZoom.setVisible(true);
+
 			lbLeftCutoff.setVisible(true);
 			tfLeftCutoff.setVisible(true);
+
+			bSlightUp.setVisible(true);
+			bSlightDown.setVisible(true);
 		}else if(seqLeft.getDataType() == SequenceMaster.typeFasta) {
 			lbLeftZoom.setVisible(false);
 			sliderLeftScale.setVisible(false);
 			tfLeftZoom.setText(String.valueOf(leftDrawScale));
 			tfLeftZoom.setVisible(false);
+
 			lbLeftCutoff.setVisible(false);
 			tfLeftCutoff.setVisible(false);
+
+			bSlightUp.setVisible(false);
+			bSlightDown.setVisible(false);
 		}
 	}
 
@@ -631,6 +652,44 @@ public class Controller2 implements Initializable {
 		}
 	}
 
+	@FXML
+	protected void bToSlightRightClick() {
+		int max = (int)this.sliderTopPosition.getMax();
+		int now = (int)this.sliderTopPosition.getValue();
+
+		if(now + 1 <= max) {
+			this.sliderTopPosition.setValue(now + 1);
+		}
+	}
+
+	@FXML
+	protected void bToSlightLeftClick() {
+		int now = (int)this.sliderTopPosition.getValue();
+
+		if(now - 1 >= 0) {
+			this.sliderTopPosition.setValue(now - 1);
+		}
+	}
+
+	@FXML
+	protected void bSlightDownClick() {
+		int max = (int)this.sliderLeftPosition.getMax();
+		int now = (int)this.sliderLeftPosition.getValue();
+
+		if(now + 1 <= max) {
+			this.sliderLeftPosition.setValue(now + 1);
+		}
+	}
+
+	@FXML
+	protected void bSlightUpClick() {
+		int now = (int)this.sliderLeftPosition.getValue();
+
+		if(now - 1 >= 0) {
+			this.sliderLeftPosition.setValue(now - 1);
+		}
+	}
+
 //==================== Reverse complement processing ===================
 
 // TODO とりあえずCheckBoxコントローラー置き
@@ -652,6 +711,9 @@ public class Controller2 implements Initializable {
 			this.cbLeftSplit.setSelected(true);
 			this.cbLeftSplit.setVisible(true);
 		}
+
+		this.cbTopRevcom.setSelected(false);
+		this.cbLeftRevcom.setSelected(false);
 	}
 
 	private void checkRevcomClick(boolean isSelected, SequenceMaster seq, SequenceCanvasDrawer scd, Slider sld) {
@@ -714,6 +776,11 @@ public class Controller2 implements Initializable {
 		bToLeft.setVisible(false);
 		bUp.setVisible(false);
 		bDown.setVisible(false);
+
+		bToSlightRight.setVisible(false);
+		bToSlightLeft.setVisible(false);
+		bSlightUp.setVisible(false);
+		bSlightDown.setVisible(false);
 
 		cbTopSplit.setVisible(false);
 		cbLeftSplit.setVisible(false);
