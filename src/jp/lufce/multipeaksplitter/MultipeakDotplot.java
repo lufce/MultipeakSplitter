@@ -47,11 +47,11 @@ public class MultipeakDotplot {
 
 		for(int m=0; m<sample[1].length ;m++) {
 			for(int n=0; n<refseq[1].length; n++) {
-				if(sample[0][m] && refseq[0][n]) {dotplot[m][n]=true;}
+				if     (sample[0][m] && refseq[0][n]) {dotplot[m][n]=true;}
 				else if(sample[1][m] && refseq[1][n]) {dotplot[m][n]=true;}
 				else if(sample[2][m] && refseq[2][n]) {dotplot[m][n]=true;}
 				else if(sample[3][m] && refseq[3][n]) {dotplot[m][n]=true;}
-				else {dotplot[m][n]=false;}
+				else                                  {dotplot[m][n]=false;}
 			}
 		}
 
