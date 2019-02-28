@@ -5,7 +5,8 @@ public class MultipeakDotplot {
 	//TODO これってstaticでいいのでは。
 	//TODO もしseqTopとseqLeftの両方が波形データだった場合、どういうふうにDotplotを作ると良いのだろうか。
 
-	private boolean[][] rawDotplot, windowedDotplot, maxWindowedDotplot;
+	private boolean[][] rawDotplot, windowedDotplot;
+//	private boolean[][] maxWindowedDotplot;
 
 	private int window = -1;
 
@@ -18,7 +19,7 @@ public class MultipeakDotplot {
 			window = windowSize;
 			rawDotplot = booleanDotplot(map1, map2);
 			windowedDotplot = this.windowDotplot(rawDotplot, windowSize, thresholdSize);
-			maxWindowedDotplot = this.maximizeWindowdDotplot(map1, map2, windowedDotplot);
+//			maxWindowedDotplot = this.maximizeWindowdDotplot(map1, map2, windowedDotplot);
 		}
 	}
 
@@ -36,9 +37,9 @@ public class MultipeakDotplot {
 		return windowedDotplot;
 	}
 
-	public boolean[][] getMaxWindowedDotPlot(){
-		return this.maxWindowedDotplot;
-	}
+//	public boolean[][] getMaxWindowedDotPlot(){
+//		return this.maxWindowedDotplot;
+//	}
 
 //========================Dotmap calculation======================================
 
@@ -105,41 +106,43 @@ public class MultipeakDotplot {
 	return trimed;
 	}
 
-	private boolean[][] maximizeWindowdDotplot(boolean[][] sample, boolean[][] refseq, boolean[][] windowed){
-		boolean[][] maximized = new boolean[sample[1].length][refseq[1].length];
-		for(int m=0; m<windowed.length; m++) {
-			for(int n=0; n<windowed[1].length; n++) {
-				maximized[m][n] = windowed[m][n];
-			}
-		}
+//	private boolean[][] maximizeWindowdDotplot(boolean[][] sample, boolean[][] refseq, boolean[][] windowed){
+	//なんでこれつくったのかよくわからない。
 
-		for(int m=1; m<windowed.length-1; m++) {
-			for(int n=1; n<windowed[1].length-1; n++) {
-				if(windowed[m][n]==true) {
-					if(windowed[m+1][n+1]==false) {
-						for(int k=1; m+k < rawDotplot.length && n+k < rawDotplot[1].length; k++) {
-							if(rawDotplot[m+k][n+k]==true) {
-								maximized[m+k][n+k] = true;
-							}else {
-								break;
-							}
-						}
-					}
-
-					if(windowed[m-1][n-1]==false) {
-						for(int k=1; m-k >= 0 && n-k >= 0; k++) {
-							if(rawDotplot[m-k][n-k]==true) {
-								maximized[m-k][n-k] = true;
-							}else {
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-		return maximized;
-	}
+//		boolean[][] maximized = new boolean[sample[1].length][refseq[1].length];
+//		for(int m=0; m<windowed.length; m++) {
+//			for(int n=0; n<windowed[1].length; n++) {
+//				maximized[m][n] = windowed[m][n];
+//			}
+//		}
+//
+//		for(int m=1; m<windowed.length-1; m++) {
+//			for(int n=1; n<windowed[1].length-1; n++) {
+//				if(windowed[m][n]==true) {
+//					if(windowed[m+1][n+1]==false) {
+//						for(int k=1; m+k < rawDotplot.length && n+k < rawDotplot[1].length; k++) {
+//							if(rawDotplot[m+k][n+k]==true) {
+//								maximized[m+k][n+k] = true;
+//							}else {
+//								break;
+//							}
+//						}
+//					}
+//
+//					if(windowed[m-1][n-1]==false) {
+//						for(int k=1; m-k >= 0 && n-k >= 0; k++) {
+//							if(rawDotplot[m-k][n-k]==true) {
+//								maximized[m-k][n-k] = true;
+//							}else {
+//								break;
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//		return maximized;
+//	}
 
 //===========================utilities=================================
 

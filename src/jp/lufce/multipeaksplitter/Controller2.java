@@ -78,13 +78,14 @@ public class Controller2 implements Initializable {
 	@FXML protected Button bResetView;
 	@FXML protected CheckBox cbTopRevcom;
 	@FXML protected CheckBox cbLeftRevcom;
-	@FXML protected CheckBox cbMaximize;
-	@FXML protected CheckBox cbTopSplit;
-	@FXML protected CheckBox cbLeftSplit;
+	@FXML protected CheckBox cbTopForwardHide;
+	@FXML protected CheckBox cbTopReverseHide;
+	@FXML protected CheckBox cbLeftForwardHide;
+	@FXML protected CheckBox cbLeftReverseHide;
 	@FXML protected TextArea taSelectedForwardSequence;
 	@FXML protected TextArea taSelectedReverseSequence;
-	@FXML protected TextField tfForwardIntercept;
-	@FXML protected TextField tfReverseIntercept;
+	@FXML protected Label lbForwardIntercept;
+	@FXML protected Label lbReverseIntercept;
 
 	@FXML protected Canvas cvDotplot;
 	private GraphicsContext gcDotplot;
@@ -118,8 +119,6 @@ public class Controller2 implements Initializable {
 
 	private boolean drag = false;
 
-	@FXML protected Label lbDebug;
-
 //========================== File input =============================
 
 	@FXML
@@ -148,17 +147,6 @@ public class Controller2 implements Initializable {
 	}
 
 //======================== Making dotplot map ================================
-
-	private void updateDotmapScreen(boolean highlighting) {
-		//画面更新の一括処理を行う。
-		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-
-		//ハイライトが行われているならそれも更新
-		if(highlighting == true) {
-			cvDotplotDrawer.highlightSelectedDotSequence();
-		}
-	}
-
 	@FXML
 	protected void bMakeDotplotClick(ActionEvent e) {
 		//[Make Dotplot]ボタンを押したときの処理。
@@ -193,6 +181,13 @@ public class Controller2 implements Initializable {
 			cvDotplotDrawer = new DotplotCanvasDrawer(this.gcDotplot);
 			cvDotplotDrawer.setDrawnDotplot(this.judgeDrawnDotplot());
 
+			//hideTextを使うためにはab1ファイルのSequenceCanvasDrawerにrefseqをセットしないといけないのでその処理。
+			if(seqTop.getDataType() == SequenceMaster.typeAb1 && seqLeft.getDataType() == SequenceMaster.typeFasta) {
+				cvTopDrawer.setRefseq(seqLeft);
+			}else if(seqTop.getDataType() == SequenceMaster.typeFasta && seqLeft.getDataType() == SequenceMaster.typeAb1) {
+				cvLeftDrawer.setRefseq(seqTop);
+			}
+
 			taLog.appendText("end making dotplot"+CRLF);
 
 			//TopとLeftのSeq形式に合わせた表示の変更
@@ -210,7 +205,7 @@ public class Controller2 implements Initializable {
 			taLog.appendText("make dotplot finished"+CRLF);
 
 			//画面の更新
-			this.updateDotmapScreen(false);
+			this.cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
 
 		}catch(Exception exception) {
 //			taLog.appendText(exception.getMessage());
@@ -237,10 +232,20 @@ public class Controller2 implements Initializable {
 				taLog.appendText("setValue failed" + CRLF);
 				return;
 			}
+
+			//SequenceMasterの初期化を行って、逆相補鎖同士などを含めたDotplotを作る。
 			makeMaps();
 			makeDotplots();
 
+			//Dotplot用描画クラスを生成
+			cvDotplotDrawer = new DotplotCanvasDrawer(this.gcDotplot);
+			cvDotplotDrawer.setDrawnDotplot(this.judgeDrawnDotplot());
+
 			cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
+
+			//SequenceCanvasを現在描画されている部分から描画する
+			cvTopDrawer.updateSeqCanvas();
+			cvLeftDrawer.updateSeqCanvas();
 
 			taLog.appendText("end remaking dotplot"+CRLF);
 			//this.drawSeqCanvas(topWaveStart,gcTop);
@@ -436,11 +441,7 @@ public class Controller2 implements Initializable {
 			selectedDotplot = dotplot[3];
 		}
 
-		if(this.cbMaximize.isSelected()) {
-			return selectedDotplot.getMaxWindowedDotPlot();
-		}else {
-			return selectedDotplot.getWindowedDotPlot();
-		}
+		return selectedDotplot.getWindowedDotPlot();
 	}
 
 //======================= Mouse-action to move the dotmap position ===============================
@@ -465,7 +466,6 @@ public class Controller2 implements Initializable {
 		if(cvDotplotDrawer != null) {
 			cvDotplotDrawer.mouseDragged(e.getX(), e.getY());
 			cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-			cvDotplotDrawer.highlightSelectedDotSequence();
 
 			drag = true;
 		}
@@ -477,7 +477,6 @@ public class Controller2 implements Initializable {
 		if(cvDotplotDrawer != null) {
 			cvDotplotDrawer.mouseScroll(e.getDeltaY());
 			cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-			cvDotplotDrawer.highlightSelectedDotSequence();
 		}
 	}
 
@@ -493,13 +492,30 @@ public class Controller2 implements Initializable {
 
 				if ( cvDotplotDrawer.clickDot(e.getX(), e.getY()) ) {
 
-					fwStart  = cvDotplotDrawer.getForwardStart();
+					fwStart  = cvDotplotDrawer.getForwardStart()[1];
 					fwLength = cvDotplotDrawer.getForwardSequenceLength();
-					rvStart  = cvDotplotDrawer.getReverseStart();
+					rvStart  = cvDotplotDrawer.getReverseStart()[1];
 					rvLength = cvDotplotDrawer.getReverseSequenceLength();
 
+					//hideTextを使うため。
+					if(seqTop.getDataType() == SequenceMaster.typeAb1 && seqLeft.getDataType() == SequenceMaster.typeFasta) {
+						cvTopDrawer.setClickedForwardSequenceStart(cvDotplotDrawer.getForwardStart());
+						cvTopDrawer.setClickedForwardSequenceLength(fwLength);
+						cvTopDrawer.setClickedReverseSequenceStart(cvDotplotDrawer.getReverseStart());
+						cvTopDrawer.setClickedReverseSequenceLength(rvLength);
+
+						cvTopDrawer.updateSeqCanvas();
+
+					}else if(seqTop.getDataType() == SequenceMaster.typeFasta && seqLeft.getDataType() == SequenceMaster.typeAb1) {
+						cvLeftDrawer.setClickedForwardSequenceStart(cvDotplotDrawer.getForwardStart());
+						cvLeftDrawer.setClickedForwardSequenceLength(fwLength);
+						cvLeftDrawer.setClickedReverseSequenceStart(cvDotplotDrawer.getReverseStart());
+						cvLeftDrawer.setClickedReverseSequenceLength(rvLength);
+
+						cvLeftDrawer.updateSeqCanvas();
+					}
+
 					cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-					cvDotplotDrawer.highlightSelectedDotSequence();
 
 					if(seqTop.getDataType() == SequenceMaster.typeFasta) {
 						fwSeq = seqTop.fastaSeq.getSeqSubstring(fwStart, fwLength);
@@ -512,8 +528,8 @@ public class Controller2 implements Initializable {
 					taSelectedForwardSequence.setText(fwSeq.toUpperCase());
 					taSelectedReverseSequence.setText(rvSeq.toUpperCase());
 
-					tfForwardIntercept.setText(Integer.toString(cvDotplotDrawer.getForwardInterception()));
-					tfReverseIntercept.setText(Integer.toString(cvDotplotDrawer.getReverseInterception()));
+					lbForwardIntercept.setText(Integer.toString(cvDotplotDrawer.getForwardInterception()));
+					lbReverseIntercept.setText(Integer.toString(cvDotplotDrawer.getReverseInterception()));
 				}
 			}else {
 				drag = false;
@@ -524,6 +540,10 @@ public class Controller2 implements Initializable {
 //======================= Slider ==================================
 	private void initializeSliders() {
 		//波形の位置変更のスライダーの設定
+
+		this.sliderTopPosition.setValue(0);
+		this.sliderLeftPosition.setValue(0);
+
 		initializePositionSlider(sliderTopPosition, seqTop, cvTopDrawer);
 		initializePositionSlider(sliderLeftPosition, seqLeft, cvLeftDrawer);
 	}
@@ -562,17 +582,6 @@ public class Controller2 implements Initializable {
 		scd.updateSeqCanvas( (int)Math.round(sld.getValue()) );
 
 		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
-		cvDotplotDrawer.highlightSelectedDotSequence();
-
-		//TODO for debug
-
-		double tMax = this.sliderTopPosition.getMax();
-		double tNow = this.sliderTopPosition.getValue();
-		double lMax = this.sliderLeftPosition.getMax();
-		double lNow = this.sliderLeftPosition.getValue();
-
-		lbDebug.setText(Double.toString(tMax)+"\n"+Double.toString(tNow)+"\n"+Double.toString(lMax)+"\n"+Double.toString(lNow));
-
 	}
 
 	private void slideScale(Slider sld, TextField tf, SequenceCanvasDrawer cvd) {
@@ -696,37 +705,65 @@ public class Controller2 implements Initializable {
 
 	private void initializeCheckBoxes() {
 
-		if(seqTop.getDataType() == SequenceMaster.typeAb1) {
-			this.cbTopSplit.setSelected(false);
-			this.cbTopSplit.setVisible(false);
-		}else if(seqTop.getDataType() == SequenceMaster.typeFasta) {
-			this.cbTopSplit.setSelected(true);
-			this.cbTopSplit.setVisible(true);
-		}
+		this.cbTopForwardHide.setSelected(false);
+		this.cbTopForwardHide.setVisible(false);
+		this.cbTopReverseHide.setSelected(false);
+		this.cbTopReverseHide.setVisible(false);
 
-		if(seqLeft.getDataType() == SequenceMaster.typeAb1) {
-			this.cbLeftSplit.setSelected(false);
-			this.cbLeftSplit.setVisible(false);
-		}else if(seqLeft.getDataType() == SequenceMaster.typeFasta) {
-			this.cbLeftSplit.setSelected(true);
-			this.cbLeftSplit.setVisible(true);
+		this.cbLeftForwardHide.setSelected(false);
+		this.cbLeftForwardHide.setVisible(false);
+		this.cbLeftReverseHide.setSelected(false);
+		this.cbLeftReverseHide.setVisible(false);
+
+		if(seqTop.getDataType() == SequenceMaster.typeAb1 && seqLeft.getDataType() == SequenceMaster.typeFasta) {
+			this.cbTopForwardHide.setVisible(true);
+			this.cbTopReverseHide.setVisible(true);
+		}else if(seqTop.getDataType() == SequenceMaster.typeFasta && seqLeft.getDataType() == SequenceMaster.typeAb1) {
+			this.cbLeftReverseHide.setVisible(true);
+			this.cbLeftReverseHide.setVisible(true);
 		}
 
 		this.cbTopRevcom.setSelected(false);
 		this.cbLeftRevcom.setSelected(false);
 	}
 
+	private void clearClickedSequenceHighligting() {
+		//hideTextの中身を初期化する
+		if(seqTop.getDataType() == SequenceMaster.typeAb1 && seqLeft.getDataType() == SequenceMaster.typeFasta) {
+			cvTopDrawer.setClickedForwardSequenceStart(null);
+			cvTopDrawer.setClickedForwardSequenceLength(0);
+			cvTopDrawer.setClickedReverseSequenceStart(null);
+			cvTopDrawer.setClickedReverseSequenceLength(0);
+
+			cvTopDrawer.updateSeqCanvas();
+		}else if(seqTop.getDataType() == SequenceMaster.typeFasta && seqLeft.getDataType() == SequenceMaster.typeAb1) {
+			cvLeftDrawer.setClickedForwardSequenceStart(null);
+			cvLeftDrawer.setClickedForwardSequenceLength(0);
+			cvLeftDrawer.setClickedReverseSequenceStart(null);
+			cvLeftDrawer.setClickedReverseSequenceLength(0);
+
+			cvLeftDrawer.updateSeqCanvas();
+		}
+
+		cvDotplotDrawer.clearClickedSequenceHilighting();
+
+		this.lbForwardIntercept.setText("0");
+		this.lbReverseIntercept.setText("0");
+
+		this.taSelectedForwardSequence.setText("");
+		this.taSelectedReverseSequence.setText("");
+	}
+
 	private void checkRevcomClick(boolean isSelected, SequenceMaster seq, SequenceCanvasDrawer scd, Slider sld) {
 		double now = sld.getValue();
 		double max = sld.getMax();
 
-		sld.setValue((int)(max - now));
-
+		this.clearClickedSequenceHighligting();
 		seq.setRevcom(isSelected);
 
-		scd.updateSeqCanvas((int)(max - now));
-
 		cvDotplotDrawer.setDrawnDotplot(this.judgeDrawnDotplot());
+		sld.setValue((int)(max - now));
+		scd.updateSeqCanvas((int)(max - now));
 		cvDotplotDrawer.updateDotplot(cvTopDrawer, cvLeftDrawer);
 	}
 
@@ -740,19 +777,52 @@ public class Controller2 implements Initializable {
 		this.checkRevcomClick(cbLeftRevcom.isSelected(), this.seqLeft, this.cvLeftDrawer, this.sliderLeftPosition);
 	}
 
-	@FXML
-	protected void cbTopSplitClick() {
+	private void cbForwardHideProcess(CheckBox clicked, CheckBox theOther, SequenceCanvasDrawer scd) {
+		if(clicked.isSelected()) {
+			if(theOther.isSelected()) {
+				scd.setReverseHideText(false);
+				theOther.setSelected(false);
+			}
+			scd.setForwardHideText(true);
+		}else {
+			scd.setForwardHideText(false);
+		}
 
+		scd.updateSeqCanvas();
+	}
+
+	private void cbReverseHideProcess(CheckBox clicked, CheckBox theOther, SequenceCanvasDrawer scd) {
+		if(clicked.isSelected()) {
+			if(theOther.isSelected()) {
+				scd.setForwardHideText(false);
+				theOther.setSelected(false);
+			}
+			scd.setReverseHideText(true);
+		}else {
+			scd.setReverseHideText(false);
+		}
+
+		scd.updateSeqCanvas();
 	}
 
 	@FXML
-	protected void cbLeftSplitClick() {
-
+	protected void cbTopForwardHideClick() {
+		this.cbForwardHideProcess(cbTopForwardHide, cbTopReverseHide, cvTopDrawer);
 	}
 
 	@FXML
-	protected void cbMaximizeClick() {
+	protected void cbTopReverseHideClick() {
+		this.cbReverseHideProcess(cbTopReverseHide, cbTopForwardHide, cvTopDrawer);
+	}
 
+	@FXML
+	protected void cbLeftForwardHideClick() {
+		this.cbForwardHideProcess(cbLeftForwardHide, cbLeftReverseHide, cvLeftDrawer);
+	}
+
+	@FXML
+	protected void cbLeftReverseHideClick() {
+		this.cbReverseHideProcess(cbLeftReverseHide, cbLeftForwardHide, cvLeftDrawer);
 	}
 
 //===================== For debug or etc. ==========================
@@ -782,8 +852,10 @@ public class Controller2 implements Initializable {
 		bSlightUp.setVisible(false);
 		bSlightDown.setVisible(false);
 
-		cbTopSplit.setVisible(false);
-		cbLeftSplit.setVisible(false);
+		cbTopForwardHide.setVisible(false);
+		cbTopReverseHide.setVisible(false);
+		cbLeftForwardHide.setVisible(false);
+		cbLeftReverseHide.setVisible(false);
 
 		sliderTopScale.setValue(topDrawScale);
 		sliderTopScale.setMin(WAVE_SCALE_MIN);

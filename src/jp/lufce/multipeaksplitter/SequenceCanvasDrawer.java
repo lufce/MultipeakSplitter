@@ -5,13 +5,21 @@ import javafx.scene.paint.Color;
 
 public class SequenceCanvasDrawer extends CanvasDrawer{
 	private SequenceMaster seq;
+	private SequenceMaster refseq = null;
 	private int drawableRange;
 	private boolean isLeftCanvas = false;
+	private boolean forwardHideText = false;
+	private boolean reverseHideText = false;
 
-	private int sequenceStartIndex = -1;
-	private int sequenceEndIndex = -1;
+	private int sequenceDrawnStartIndex = -1;
+	private int sequenceDrawnEndIndex = -1;
 	private int basecallStart;
 //	private int basecallEnd;
+
+	private int[] clickedForwardSequenceStart = null;
+	private int clickedForwardSequenceLength = 0;
+	private int[] clickedReverseSequenceStart = null;
+	private int clickedReverseSequenceLength = 0;
 
 	private int drawInterval = 1;
 	private double drawScale = 1.0;
@@ -39,16 +47,44 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 		drawScale = scale;
 	}
 
+	public void setForwardHideText(boolean boo) {
+		this.forwardHideText = boo;
+	}
+
+	public void setReverseHideText(boolean boo) {
+		this.reverseHideText = boo;
+	}
+
+	public void setRefseq(SequenceMaster seq) {
+		this.refseq = seq;
+	}
+
+	public void setClickedForwardSequenceStart(int[] arg) {
+		this.clickedForwardSequenceStart = arg;
+	}
+
+	public void setClickedForwardSequenceLength(int arg) {
+		this.clickedForwardSequenceLength = arg;
+	}
+
+	public void setClickedReverseSequenceStart(int[] arg) {
+		this.clickedReverseSequenceStart = arg;
+	}
+
+	public void setClickedReverseSequenceLength(int arg) {
+		this.clickedReverseSequenceLength = arg;
+	}
+
 	public int getTextInterval() {
 		return this.TEXT_INTERVAL;
 	}
 
 	public int getDrawnStartIndex() {
-		return this.sequenceStartIndex;
+		return this.sequenceDrawnStartIndex;
 	}
 
 	public int getDrawnEndIndex() {
-		return this.sequenceEndIndex;
+		return this.sequenceDrawnEndIndex;
 	}
 
 	public int getSequenceLength() {
@@ -56,7 +92,7 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 	}
 
 	public int getDrawnSequenceLength() {
-		return sequenceEndIndex - sequenceStartIndex + 1;
+		return sequenceDrawnEndIndex - sequenceDrawnStartIndex + 1;
 	}
 
 	public void updateSeqCanvas(int start) {
@@ -80,7 +116,7 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 
 		switch(seq.getDataType()) {
 		case SequenceMaster.typeFasta:
-			drawSeqText(this.sequenceStartIndex);
+			drawSeqText(this.sequenceDrawnStartIndex);
 			break;
 		case SequenceMaster.typeAb1:
 			drawSeqWaveAndText(this.basecallStart);
@@ -91,13 +127,13 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 	public int getDrawableNextSeqStart() {
 		switch(seq.getDataType()) {
 		case SequenceMaster.typeFasta:
-			if(this.sequenceEndIndex + 1 <= seq.getSequenceLength()) {
-				return this.sequenceStartIndex + 1;
+			if(this.sequenceDrawnEndIndex + 1 <= seq.getSequenceLength()) {
+				return this.sequenceDrawnStartIndex + 1;
 			}
 			break;
 		case SequenceMaster.typeAb1:
-			if(seq.ab1Seq.getBasecalls()[this.sequenceStartIndex + 1] + drawableRange - VIEW_OFFSET <= seq.ab1Seq.getTraceEnd()) {
-				return seq.ab1Seq.getBasecalls()[this.sequenceStartIndex + 1] - VIEW_OFFSET;
+			if(seq.ab1Seq.getWorkingBasecall()[this.sequenceDrawnStartIndex + 1] + drawableRange - VIEW_OFFSET <= seq.ab1Seq.getTraceEnd()) {
+				return seq.ab1Seq.getWorkingBasecall()[this.sequenceDrawnStartIndex + 1] - VIEW_OFFSET;
 			}
 			break;
 		}
@@ -107,13 +143,13 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 	public int getDrawablePreviousSeqStart() {
 		switch(seq.getDataType()) {
 		case SequenceMaster.typeFasta:
-			if(this.sequenceStartIndex - 1 >= 0) {
-				return this.sequenceStartIndex - 1;
+			if(this.sequenceDrawnStartIndex - 1 >= 0) {
+				return this.sequenceDrawnStartIndex - 1;
 			}
 			break;
 		case SequenceMaster.typeAb1:
-			if(this.sequenceStartIndex - 1 - VIEW_OFFSET >= 0) {
-				return seq.ab1Seq.getBasecalls()[this.sequenceStartIndex - 1] - VIEW_OFFSET;
+			if(this.sequenceDrawnStartIndex - 1 - VIEW_OFFSET >= 0) {
+				return seq.ab1Seq.getWorkingBasecall()[this.sequenceDrawnStartIndex - 1] - VIEW_OFFSET;
 			}
 			break;
 		}
@@ -128,10 +164,16 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 		double localMax = seq.ab1Seq.getLocalMaxIntensity(waveStart, waveEnd);
 		boolean[][] map = seq.ab1Seq.getWorkingMap();
 		int[] basecall = seq.ab1Seq.getWorkingBasecall();
-		int pointer = this.searchSequenceStartIndex(basecall, start, sequenceStartIndex);
+		int pointer = this.searchSequenceStartIndex(basecall, start, sequenceDrawnStartIndex);
 		double[][] drawIntensity = this.convertDrawIntensity(seq.ab1Seq.getSubarrayMultiAllIntensity(waveStart, waveEnd), localMax);
 
+		boolean[][] refseqMap = null;
+
 		gc.setLineWidth(WAVELINE_WIDTH);
+
+		if(forwardHideText == true || reverseHideText == true) {
+			refseqMap = refseq.fastaSeq.getWorkingMap();
+		}
 
 		for(int m = 0; m < drawIntensity[0].length - 1; m++) {
 			for(int n = 0; n < 4; n++) {
@@ -149,6 +191,23 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 			if(pointer < basecall.length && basecall[pointer] == m + waveStart) {
 				for(int n = 0; n < 4; n++) {
 					if(map[n][pointer]) {
+
+						//pointerやmapのインデックスは0スタート。ForwardSequenceStartなどは1スタート
+
+						if(forwardHideText  &&
+						clickedForwardSequenceStart != null && clickedForwardSequenceLength != 0 &&
+						clickedForwardSequenceStart[0] - 1 <= pointer && pointer < clickedForwardSequenceStart[0] + clickedForwardSequenceLength - 1  &&
+						refseqMap[n][pointer + clickedForwardSequenceStart[1] - clickedForwardSequenceStart[0]]) {
+							continue;
+						}
+
+						if(reverseHideText  &&
+						clickedReverseSequenceStart != null && clickedReverseSequenceLength != 0 &&
+						clickedReverseSequenceStart[0] - clickedReverseSequenceLength <= pointer && pointer < clickedReverseSequenceStart[0] &&
+						refseqMap[n][clickedReverseSequenceStart[1] + clickedReverseSequenceStart[0] - 2 - pointer]) {
+							continue;
+						}
+
 						gc.setFill(BASE_COLOR[n]);
 
 						if(isLeftCanvas) {
@@ -164,7 +223,7 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 		}
 
 		//描画範囲の最後のインデックスを取得
-		sequenceEndIndex = pointer - 1;
+		sequenceDrawnEndIndex = pointer - 1;
 	}
 
 	private int searchSequenceStartIndex(int[] basecall, int start, int previousIndex) {
@@ -174,7 +233,7 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 			//sequenceStartIndexが初期状態なら0から探し始める。
 			for(int n = 0; n < basecall.length; n++) {
 				if(basecall[n] > start) {
-					sequenceStartIndex = n;
+					sequenceDrawnStartIndex = n;
 					break;
 				}
 			}
@@ -186,10 +245,10 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 
 				for(int n = previousIndex; n >= 0; n--) {
 					if(basecall[n] < start) {
-						sequenceStartIndex = n + 1;
+						sequenceDrawnStartIndex = n + 1;
 						break;
 					}else if(basecall[n] == start) {
-						sequenceStartIndex = n;
+						sequenceDrawnStartIndex = n;
 					}
 				}
 			}else {
@@ -197,20 +256,20 @@ public class SequenceCanvasDrawer extends CanvasDrawer{
 
 				for(int n = previousIndex; n < basecall.length; n++) {
 					if(basecall[n] >= start) {
-						sequenceStartIndex = n;
+						sequenceDrawnStartIndex = n;
 						break;
 					}
 				}
 			}
 		}
 
-		return sequenceStartIndex;
+		return sequenceDrawnStartIndex;
 	}
 
 	private void drawSeqText(int start) {
 		boolean[][] map = seq.fastaSeq.getMap();
-		sequenceStartIndex = start;
-		sequenceEndIndex = start + drawableRange / TEXT_INTERVAL;
+		sequenceDrawnStartIndex = start;
+		sequenceDrawnEndIndex = start + drawableRange / TEXT_INTERVAL;
 
 		for(int m = 0; m < drawableRange / TEXT_INTERVAL; m++) {
 			for(int n = 0; n < 4; n++) {

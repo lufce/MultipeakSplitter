@@ -30,29 +30,28 @@
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="643.0" prefWidth="200.0">
                      <children>
-                        <Label layoutX="15.0" layoutY="3.0" text="Cutoff (%)" />
-                        <Label layoutX="11.0" layoutY="77.0" text="Window Size" />
-                        <TextField fx:id="tfTopCutoff" layoutX="13.0" layoutY="40.0" prefHeight="25.0" prefWidth="58.0" text="10" />
-                        <TextField fx:id="tfWindow" layoutX="16.0" layoutY="94.0" prefHeight="25.0" prefWidth="58.0" text="15" />
-                        <Button fx:id="bRemake" layoutX="11.0" layoutY="126.0" mnemonicParsing="false" onAction="#bRemakeClick" text="Remake Dotplot" />
-                        <Label layoutX="13.0" layoutY="299.0" text="Selected Forward Sequence" />
-                        <TextArea fx:id="taSelectedForwardSequence" layoutX="8.0" layoutY="316.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
-                        <Button fx:id="bResetView" layoutX="12.0" layoutY="157.0" mnemonicParsing="false" onAction="#bResetViewClick" text="Resete View" />
-                        <TextArea fx:id="taSelectedReverseSequence" layoutX="8.0" layoutY="482.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
-                        <Label layoutX="13.0" layoutY="465.0" text="Selected Reverse Sequence" />
-                        <CheckBox fx:id="cbTopRevcom" layoutX="13.0" layoutY="243.0" mnemonicParsing="false" onMouseClicked="#cbTopRevcomClick" text="Top Seq" />
-                        <Label layoutX="12.0" layoutY="417.0" text="Y-intercept" />
-                        <Label layoutX="12.0" layoutY="580.0" text="Y-intercept" />
-                        <TextField fx:id="tfForwardIntercept" layoutX="10.0" layoutY="434.0" prefHeight="25.0" prefWidth="86.0" />
-                        <TextField fx:id="tfReverseIntercept" layoutX="10.0" layoutY="597.0" prefHeight="25.0" prefWidth="86.0" />
-                        <TextField fx:id="tfThreshold" layoutX="101.0" layoutY="94.0" prefHeight="25.0" prefWidth="58.0" text="13" />
-                        <Label layoutX="96.0" layoutY="77.0" text="Threshold Size" />
-                        <TextField fx:id="tfLeftCutoff" layoutX="101.0" layoutY="40.0" prefHeight="25.0" prefWidth="58.0" text="10" />
-                        <Label fx:id="lbTopCutoff" layoutX="13.0" layoutY="22.0" text="Top Seq" />
-                        <Label fx:id="lbLeftCutoff" layoutX="101.0" layoutY="22.0" text="Left Seq" />
-                        <Label layoutX="13.0" layoutY="226.0" text="Reverse Complement" />
-                        <CheckBox fx:id="cbMaximize" layoutX="14.0" layoutY="199.0" mnemonicParsing="false" onMouseClicked="#cbMaximizeClick" prefHeight="17.0" prefWidth="157.0" text="Maximize line length" />
-                        <CheckBox fx:id="cbLeftRevcom" layoutX="13.0" layoutY="262.0" mnemonicParsing="false" onMouseClicked="#cbLeftRevcomClick" text="Left Seq" />
+                        <Label layoutX="7.0" layoutY="3.0" text="Cutoff (%)" />
+                        <Label layoutX="7.0" layoutY="77.0" text="Window Size" />
+                        <TextField fx:id="tfTopCutoff" layoutX="7.0" layoutY="40.0" prefHeight="25.0" prefWidth="58.0" text="10" />
+                        <TextField fx:id="tfWindow" layoutX="7.0" layoutY="94.0" prefHeight="25.0" prefWidth="58.0" text="7" />
+                        <Button fx:id="bRemake" layoutX="7.0" layoutY="126.0" mnemonicParsing="false" onAction="#bRemakeClick" text="Remake Dotplot" />
+                        <Label layoutX="7.0" layoutY="270.0" text="Selected Forward Sequence" />
+                        <TextArea fx:id="taSelectedForwardSequence" layoutX="7.0" layoutY="287.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
+                        <Button fx:id="bResetView" layoutX="7.0" layoutY="157.0" mnemonicParsing="false" onAction="#bResetViewClick" text="Resete View" />
+                        <TextArea fx:id="taSelectedReverseSequence" layoutX="7.0" layoutY="453.0" prefHeight="100.0" prefWidth="185.0" wrapText="true" />
+                        <Label layoutX="7.0" layoutY="436.0" text="Selected Reverse Sequence" />
+                        <CheckBox fx:id="cbTopRevcom" layoutX="7.0" layoutY="214.0" mnemonicParsing="false" onMouseClicked="#cbTopRevcomClick" text="Top Seq" />
+                        <Label layoutX="7.0" layoutY="396.0" text="Y-intercept" />
+                        <Label layoutX="7.0" layoutY="566.0" text="Y-intercept" />
+                        <TextField fx:id="tfThreshold" layoutX="90.0" layoutY="94.0" prefHeight="25.0" prefWidth="58.0" text="7" />
+                        <Label layoutX="90.0" layoutY="77.0" text="Threshold Size" />
+                        <TextField fx:id="tfLeftCutoff" layoutX="90.0" layoutY="40.0" prefHeight="25.0" prefWidth="58.0" text="10" />
+                        <Label fx:id="lbTopCutoff" layoutX="7.0" layoutY="22.0" text="Top Seq" />
+                        <Label fx:id="lbLeftCutoff" layoutX="90.0" layoutY="22.0" text="Left Seq" />
+                        <Label layoutX="7.0" layoutY="197.0" text="Reverse Complement" />
+                        <CheckBox fx:id="cbLeftRevcom" layoutX="7.0" layoutY="233.0" mnemonicParsing="false" onMouseClicked="#cbLeftRevcomClick" text="Left Seq" />
+                        <Label fx:id="lbForwardIntercept" layoutX="75.0" layoutY="396.0" prefHeight="17.0" prefWidth="56.0" text="0" />
+                        <Label fx:id="lbReverseIntercept" layoutX="75.0" layoutY="566.0" prefHeight="17.0" prefWidth="56.0" text="0" />
                      </children></AnchorPane>
             </content>
           </Tab>
@@ -68,16 +67,17 @@
       <Slider fx:id="sliderLeftScale" layoutX="238.0" layoutY="180.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="14.0" prefWidth="145.0" rotate="180.0" />
       <TextField fx:id="tfLeftZoom" layoutX="239.0" layoutY="155.0" onKeyPressed="#tfLeftZoomKeyPressed" prefHeight="25.0" prefWidth="40.0" />
       <Label fx:id="lbLeftZoom" layoutX="239.0" layoutY="138.0" text="Zoom" />
-      <CheckBox fx:id="cbLeftSplit" layoutX="296.0" layoutY="159.0" mnemonicParsing="false" onMouseClicked="#cbLeftSplitClick" selected="true" text="Split" />
-      <CheckBox fx:id="cbTopSplit" layoutX="366.0" layoutY="66.0" mnemonicParsing="false" onMouseClicked="#cbTopSplitClick" selected="true" text="Split" />
+      <CheckBox fx:id="cbLeftForwardHide" layoutX="311.0" layoutY="142.0" mnemonicParsing="false" onMouseClicked="#cbLeftForwardHideClick" selected="true" text="Forward Hide" />
+      <CheckBox fx:id="cbTopForwardHide" layoutX="311.0" layoutY="72.0" mnemonicParsing="false" onMouseClicked="#cbTopForwardHideClick" selected="true" text="Forward Hide" />
       <Button fx:id="bToLeft" layoutX="626.0" layoutY="152.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bToLeftClick" prefHeight="25.0" prefWidth="35.0" text="&lt;&lt;" />
       <Button fx:id="bToRight" layoutX="722.0" layoutY="152.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bToRightClick" prefHeight="25.0" prefWidth="35.0" text="&gt;&gt;" />
       <Button fx:id="bUp" layoutX="381.0" layoutY="392.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bUpClick" prefHeight="25.0" prefWidth="35.0" rotate="270.0" text="&gt;&gt;" />
       <Button fx:id="bDown" layoutX="381.0" layoutY="485.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bDownClick" prefHeight="25.0" prefWidth="35.0" rotate="270.0" text="&lt;&lt;" />
-      <Label fx:id="lbDebug" alignment="TOP_LEFT" layoutX="241.0" layoutY="18.0" prefHeight="113.0" prefWidth="114.0" text="Label" wrapText="true" />
       <Button fx:id="bToSlightLeft" layoutX="665.0" layoutY="152.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bToSlightLeftClick" prefHeight="25.0" prefWidth="25.0" text="&lt;" />
       <Button fx:id="bToSlightRight" layoutX="692.0" layoutY="152.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bToSlightRightClick" prefHeight="25.0" prefWidth="25.0" text="&gt;" />
       <Button fx:id="bSlightUp" layoutX="386.0" layoutY="425.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bSlightUpClick" prefHeight="25.0" prefWidth="25.0" rotate="270.0" text="&gt;" />
       <Button fx:id="bSlightDown" layoutX="386.0" layoutY="452.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onMouseClicked="#bSlightDownClick" prefHeight="25.0" prefWidth="25.0" rotate="270.0" text="&lt;" />
+      <CheckBox fx:id="cbTopReverseHide" layoutX="311.0" layoutY="89.0" mnemonicParsing="false" onMouseClicked="#cbTopReverseHideClick" selected="true" text="Reverse Hide" />
+      <CheckBox fx:id="cbLeftReverseHide" layoutX="311.0" layoutY="159.0" mnemonicParsing="false" onMouseClicked="#cbLeftReverseHideClick" selected="true" text="Reverse Hide" />
    </children>
 </AnchorPane>

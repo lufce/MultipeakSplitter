@@ -38,21 +38,33 @@ public class DotplotCanvasDrawer extends DraggableCanvasDrawer {
 		return this.reverseSequenceLength;
 	}
 
-	public int getForwardStart() {
-		return this.forwardStartPoint[1];
+	public int[] getForwardStart() {
+		return this.forwardStartPoint;
 	}
 
-	public int getReverseStart() {
-		return this.reverseStartPoint[1];
+	public int[] getReverseStart() {
+		return this.reverseStartPoint;
 	}
 
 	public int getReverseInterception() {
 		return this.reverseInterception;
 	}
 
+	public void clearClickedSequenceHilighting() {
+		this.forwardSequenceLength = 0;
+		this.reverseSequenceLength = 0;
+
+		this.forwardStartPoint = new int[2];
+		this.reverseStartPoint = new int[2];
+
+		this.forwardInterception = 0;
+		this.reverseInterception = 0;
+	}
+
 	public void updateDotplot(SequenceCanvasDrawer scdTop, SequenceCanvasDrawer scdLeft) {
 		super.clearCanvas();
 		this.drawDotplot(scdTop, scdLeft);
+		this.highlightSelectedDotSequence();
 	}
 
 	private void drawDotplot(SequenceCanvasDrawer scdTop, SequenceCanvasDrawer scdLeft) {
@@ -176,7 +188,7 @@ public class DotplotCanvasDrawer extends DraggableCanvasDrawer {
 		}
 	}
 
-	public void highlightSelectedDotSequence() {
+	private void highlightSelectedDotSequence() {
 		if(forwardSequenceLength > 0) {
 			gc.setFill(Color.RED);
 
